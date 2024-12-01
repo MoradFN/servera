@@ -1,51 +1,27 @@
 import express from "express";
-import mysql from "mysql2/promise";
 import dotenv from "dotenv";
+import testRoute from "./routes/testRoute.js"; // Import your route module
 
-dotenv.config(); // Load environment variables from .env file
+dotenv.config();
 
 const app = express();
-const port = 3001;
+const port = 8081;
 
-// Create the MySQL pool
-const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT,
-  waitForConnections: true,
-  connectionLimit: 100, // Standard increased for more traffic
-  queueLimit: 0, // Unlimited queueing
+// Middleware for parsing JSON
+app.use(express.json());
+
+// Mount your routes
+app.use("/api", testRoute);
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res
+    .status(500)
+    .json({ error: "Internal Server Error", message: err.message });
 });
 
-// Async function to test the database connection
-async function testDatabaseConnection() {
-  try {
-    const [rows] = await pool.query("SELECT * FROM test_table");
-    console.log("Database query result:", rows);
-  } catch (err) {
-    console.error("Error executing query:", err);
-  }
-}
-
-// Test the database connection on server startup
-testDatabaseConnection();
-
-// Express route for testing
-app.get("/", async (req, res) => {
-  try {
-    const [rows] = await pool.query("SELECT * FROM test_table");
-    res.json(rows);
-  } catch (err) {
-    console.error("Error fetching data:", err);
-    res.status(500).json({ error: "Database query failed" });
-  }
-});
-
-// Start the Express server
+// Start the server
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
-
-export default pool;
