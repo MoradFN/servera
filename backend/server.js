@@ -1,27 +1,23 @@
-import express from "express";
-import dotenv from "dotenv";
-import testRoute from "./routes/testRoute.js"; // Import your route module
+import app from "./app.js";
+import pool from "./config/database.js";
 
-dotenv.config();
-
-const app = express();
-const port = 8081;
-
-// Middleware for parsing JSON
-app.use(express.json());
-
-// Mount your routes
-app.use("/api", testRoute);
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res
-    .status(500)
-    .json({ error: "Internal Server Error", message: err.message });
-});
+const PORT = process.env.PORT;
 
 // Start the server
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+const server = app.listen(PORT, () => {
+  console.log(`Server running on port http://localhost:${PORT}/`);
 });
+
+// Handle graceful shutdown
+process.on("SIGTERM", async () => {
+  console.log("Closing server and database pool (SIGTERM)...");
+  server.close(() => {
+    pool.end().then(() => {
+      console.log("Database pool closed");
+      process.exit(0);
+    });
+  });
+});
+
+// process.on("SIGTERM", shutdownHandler);
+// process.on("SIGINT", shutdownHandler);

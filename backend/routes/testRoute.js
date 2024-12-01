@@ -1,14 +1,23 @@
-import { Router } from "express";
-import pool from "../config/database.js"; // Ensure this path is correct
+import express from "express";
+import pool from "../config/database.js";
+import { getTestData } from "../controllers/testController.js";
 
-const router = Router();
+const router = express.Router();
 
-router.get("/test", async (req, res, next) => {
+// Test database connection
+router.get("/test", getTestData);
+
+// Health check route
+router.get("/health", async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT * FROM test_table");
-    res.status(200).json(rows); // Send the query result as a JSON response
+    await pool.query("SELECT 1");
+    res.status(200).json({ success: true, message: "Server is healthy" });
   } catch (err) {
-    next(err); // Pass the error to the middleware
+    res.status(500).json({
+      success: false,
+      message: "Database connection failed",
+      error: err.message,
+    });
   }
 });
 

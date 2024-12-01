@@ -1,9 +1,9 @@
 import mysql from "mysql2/promise";
 import dotenv from "dotenv";
 
-dotenv.config(); // Load environment variables from .env file
+dotenv.config(); // Load environment variables from .env
 
-// Create the MySQL pool
+// Create a connection pool
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -11,26 +11,9 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME,
   port: process.env.DB_PORT || 3306,
   waitForConnections: true,
-  connectionLimit: 100, // Standard increased for more traffic
-  queueLimit: 0, // Unlimited queueing
+  connectionLimit: 100, // Justera beroende på expekterad trafik, standard är annars 10.
+  queueLimit: 0, // queue,(Kö) 0 är unlimited.
 });
-export async function fetchAllFromTable(tableName) {
-  try {
-    const [rows] = await pool.query(`SELECT * FROM ${tableName}`);
-    return rows;
-  } catch (err) {
-    throw new Error(`Failed to fetch data from ${tableName}: ${err.message}`);
-  }
-}
 
-// Async function to test the database connection
-export async function testDatabaseConnection() {
-  try {
-    const [rows] = await pool.query("SELECT * FROM test_table");
-    console.log("Database query result:", rows);
-  } catch (err) {
-    console.error("Error executing query:", err);
-  }
-}
-
+// Export the pool for use in other modules
 export default pool;
