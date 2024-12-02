@@ -1,5 +1,6 @@
 import pool from "../config/database.js";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 export async function registerRestaurant(req, res, next) {
   try {
@@ -58,48 +59,85 @@ export async function registerRestaurant(req, res, next) {
   }
 }
 
-// export const registerRestaurant = async (req, res, next) => {
-//   const errors = validationResult(req);
-//   if (!errors.isEmpty()) {
-//     return res.status(400).json({ success: false, errors: errors.array() });
-//   }
+export async function login(req, res, next) {
+  try {
+    const { email, password } = req.body;
 
-//   const { name, email, password } = req.body;
+    // Validate input
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required.",
+      });
+    }
 
-//   try {
-//     // Hash the password
-//     const hashedPassword = await bcrypt.hash(password, 10);
+    // Query database for user
+    const query = `
+        SELECT id, name, email, slug, password_hash, is_active 
+        FROM restaurants 
+        WHERE email = ?
+      `;
+    const [rows] = await pool.query(query, [email]);
 
-//     // Generate slug (you can use a slugify library if needed)
-//     const slug = name.toLowerCase().replace(/\s+/g, "-");
+    // Check if user exists
+    if (rows.length === 0) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password.",
+      });
+    }
 
-//     // Insert into database
-//     const [result] = await pool.query(
-//       `INSERT INTO restaurants (name, slug, email, password_hash) VALUES (?, ?, ?, ?)`,
-//       [name, slug, email, hashedPassword]
-//     );
+    const user = rows[0];
 
-//     // Generate JWT
-//     const token = jwt.sign({ id: result.insertId, email }, JWT_SECRET, {
-//       expiresIn: "1h",
-//     });
+    // Check if account is active
+    if (!user.is_active) {
+      return res.status(403).json({
+        success: false,
+        message: "Your account is inactive. Please contact support.",
+      });
+    }
 
-//     res.status(201).json({
-//       success: true,
-//       message: "Restaurant registered successfully",
-//       token,
-//     });
-//   } catch (err) {
-//     if (err.code === "ER_DUP_ENTRY") {
-//       return res
-//         .status(400)
-//         .json({ success: false, message: "Email or slug already exists" });
-//     }
-//     next(err);
-//   }
-// };
+    // Check if password matches
+    const passwordMatch = await bcrypt.compare(password, user.password_hash);
+    if (!passwordMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password.",
+      });
+    }
 
-export const login = () => {};
+    // Create a JWT
+    const token = jwt.sign(
+      {
+        id: user.id,
+        slug: user.slug, // Include slug to identify restaurant for customization
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRY || "2h" }
+    );
+
+    // Suggest storing token in an HTTP-only cookie
+    res.cookie("authToken", token, {
+      httpOnly: true, // Prevent JavaScript access
+      secure: process.env.NODE_ENV === "production", // Use secure flag in production
+      sameSite: "strict", // Mitigate CSRF attacks
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+    });
+
+    // Respond with success
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      restaurant: {
+        id: user.id,
+        name: user.name,
+        slug: user.slug,
+      },
+    });
+  } catch (err) {
+    next(err); // Pass error to centralized error handler
+  }
+}
 
 export const logout = () => {};
 
