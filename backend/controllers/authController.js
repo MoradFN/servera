@@ -120,7 +120,7 @@ export async function login(req, res, next) {
     res.cookie("authToken", token, {
       httpOnly: true, // Prevent JavaScript access
       secure: process.env.NODE_ENV === "production", // Use secure flag in production
-      sameSite: "strict", // Mitigate CSRF attacks
+      sameSite: "lax", // Mitigate CSRF attacks
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
     });
 
@@ -139,6 +139,22 @@ export async function login(req, res, next) {
   }
 }
 
-export const logout = () => {};
+export async function logout(req, res, next) {
+  try {
+    // Clear the authToken cookie
+    res.clearCookie("authToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // Use secure in production
+      sameSite: "lax", // Mitigate CSRF attacks
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Logout successful.",
+    });
+  } catch (err) {
+    next(err); // Pass error to centralized error handler
+  }
+}
 
 export default { registerRestaurant, login, logout };
