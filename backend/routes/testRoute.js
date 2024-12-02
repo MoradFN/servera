@@ -5,7 +5,7 @@ import { getTestData } from "../controllers/testController.js";
 const router = express.Router();
 
 // Test database connection
-router.get("/test", getTestData);
+router.get("/", getTestData);
 
 // Health check route
 router.get("/health", async (req, res) => {

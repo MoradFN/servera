@@ -1,14 +1,20 @@
 import express from "express";
+
 import testRoute from "./routes/testRoute.js";
+import authRoute from "./routes/authRoute.js";
+import restaurantRoute from "./routes/restaurantRoute.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
 const app = express();
 
-// Middleware
+// Middlewares
 app.use(express.json());
 
-// Mount routes
-app.use("/api", testRoute);
+// Routes
+app.use("/api/auth", authRoute);
+app.use("/api/restaurants", restaurantRoute);
+
+app.use("/api/test", testRoute);
 
 // Catch-all for 404 errors
 app.use((req, res, next) => {
