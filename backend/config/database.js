@@ -14,6 +14,5 @@ const pool = mysql.createPool({
   connectionLimit: 100, // Justera beroende på expekterad trafik, standard är annars 10.
   queueLimit: 0, // queue,(Kö) 0 är unlimited.
 });
-
 // Export the pool for use in other modules
 export default pool;
