@@ -1,7 +1,4 @@
-import pool from "../config/database.js";
 import { sendSuccessResponse } from "../utils/responseUtils.js";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import {
   loginRestaurantService,
   registerRestaurantService,
