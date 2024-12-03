@@ -1,6 +1,9 @@
 import {
   findRestaurantByEmailOrSlug,
   createRestaurant,
+  checkRestaurantSoftTermination,
+  findRestaurantByEmail,
+  findPasswordHashByEmail,
 } from "../models/restaurantModel.js";
 import { hashPassword, comparePassword } from "../utils/passwordUtils.js";
 import { createError } from "../utils/errorUtils.js";
@@ -42,21 +45,44 @@ export const registerRestaurantService = async ({
 };
 
 export const loginRestaurantService = async ({ email, password }) => {
-  const [user] = await findRestaurantByEmailOrSlug(email, null);
-
-  if (!user) {
+  // Fetch basic restaurant details
+  const restaurant = await findRestaurantByEmail(email);
+  if (!restaurant) {
     throw createError(401, "Invalid email or password.");
   }
-  if (!user.is_active) {
+  if (!restaurant.is_active) {
     throw createError(403, "Your account is inactive. Please contact support.");
   }
-
-  const passwordMatch = await comparePassword(password, user.password_hash);
+  // Fetch password hash for the email - security layer, see model.
+  const passwordHash = await findPasswordHashByEmail(email);
+  if (!passwordHash) {
+    throw createError(401, "Invalid email or password.");
+  }
+  // Validate the password
+  const passwordMatch = await comparePassword(password, passwordHash);
   if (!passwordMatch) {
     throw createError(401, "Invalid email or password.");
   }
+  // Generate JWT token
+  const token = createToken({ id: restaurant.id, slug: restaurant.slug });
 
-  const token = createToken({ id: user.id, slug: user.slug });
-
-  return { token, user: { id: user.id, name: user.name, slug: user.slug } };
+  return {
+    token,
+    restaurant: {
+      id: restaurant.id,
+      name: restaurant.name,
+      slug: restaurant.slug,
+    },
+  };
 };
+
+//Not used
+export const validateActiveRestaurant = async (id) => {
+  const isActive = await checkRestaurantSoftTermination(id);
+  if (parseInt(isActive, 10) !== 1) {
+    //MTTODO NO PARSEINT.
+    throw createError(403, "Your account is inactive. Please contact support.");
+  }
+};
+// USAGE
+// await validateActiveRestaurant(userId);

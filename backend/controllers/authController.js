@@ -30,20 +30,15 @@ export const registerRestaurant = async (req, res, next) => {
   }
 };
 
-export const login = async (req, res, next) => {
+export const loginRestaurant = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-
-    const { token, user } = await loginRestaurantService({ email, password });
-
-    // Set token in HTTP-only cookie
-    setAuthTokenCookie(res, token);
-
-    res.status(200).json({
-      success: true,
-      message: "Login successful",
-      user,
+    const { token, restaurant } = await loginRestaurantService({
+      email,
+      password,
     });
+    setAuthTokenCookie(res, token);
+    sendSuccessResponse(res, "Login successful", { restaurant });
   } catch (err) {
     next(err);
   }
@@ -67,4 +62,4 @@ export async function logout(req, res, next) {
   }
 }
 
-export default { registerRestaurant, login, logout };
+export default { registerRestaurant, loginRestaurant, logout };
