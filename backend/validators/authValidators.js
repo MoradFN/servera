@@ -34,3 +34,15 @@ export const validateRegisterInput = [
     next();
   },
 ];
+
+export const validateLoginInput = [
+  check("email").isEmail().withMessage("Valid email is required"),
+  check("password").notEmpty().withMessage("Password is required"),
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+    next();
+  },
+];
