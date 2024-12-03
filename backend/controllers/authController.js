@@ -6,7 +6,10 @@ import {
   loginRestaurantService,
   registerRestaurantService,
 } from "../services/authService.js";
-import { setAuthTokenCookie } from "../utils/cookieUtils.js";
+import {
+  setAuthTokenCookie,
+  clearAuthTokenCookie,
+} from "../utils/cookieUtils.js";
 
 export const registerRestaurant = async (req, res, next) => {
   try {
@@ -46,19 +49,11 @@ export const loginRestaurant = async (req, res, next) => {
 
 export async function logout(req, res, next) {
   try {
-    // Clear the authToken cookie
-    res.clearCookie("authToken", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // Use secure in production
-      sameSite: "lax", // Mitigate CSRF attacks
-    });
+    clearAuthTokenCookie(res);
 
-    return res.status(200).json({
-      success: true,
-      message: "Logout successful.",
-    });
+    sendSuccessResponse(res, "Logout successful");
   } catch (err) {
-    next(err); // Pass error to centralized error handler
+    next(err);
   }
 }
 

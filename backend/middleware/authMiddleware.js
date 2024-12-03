@@ -3,16 +3,14 @@ import { createError } from "../utils/errorUtils.js";
 
 export const authenticate = (req, res, next) => {
   const token = req.cookies.authToken;
-
   if (!token) {
-    return next(createError(401, "No token provided."));
+    return next(createError(401, "Authentication required"));
   }
-
   try {
     const decoded = verifyToken(token);
-    req.user = decoded; // Attach decoded token data to the request
+    req.user = decoded;
     next();
   } catch (err) {
-    next(err);
+    return next(createError(401, "Invalid or expired token"));
   }
 };
