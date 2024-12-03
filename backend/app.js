@@ -1,14 +1,20 @@
 import express from "express";
 
+import cors from "cors";
+import cookieParser from "cookie-parser";
+
+import { errorHandler } from "./middleware/errorHandler.js";
+
 import testRoute from "./routes/testRoute.js";
 import authRoute from "./routes/authRoute.js";
 import restaurantRoute from "./routes/restaurantRoute.js";
-import { errorHandler } from "./middleware/errorHandler.js";
 
 const app = express();
 
 // Middlewares
 app.use(express.json());
+app.use(cors());
+app.use(cookieParser());
 
 // Routes
 app.use("/api/auth", authRoute);
