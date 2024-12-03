@@ -1,3 +1,5 @@
+import { validationResult } from "express-validator";
+
 const errorMessages = {
   400: "Bad Request",
   401: "Unauthorized",

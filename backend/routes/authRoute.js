@@ -11,7 +11,9 @@ import {
 const router = express.Router();
 
 router.post("/register", validateRegisterInput, registerRestaurant);
-router.post("/login", loginRestaurant);
+router.post("/login", validateLoginInput, loginRestaurant);
 router.post("/logout", logout);
 
 export default router;
+
+// MTTODO: Consider grouping related routes under an /auth path prefix in the main app, e.g., /auth/register, /auth/login.
