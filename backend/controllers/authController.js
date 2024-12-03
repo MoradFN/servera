@@ -3,7 +3,7 @@ import { sendSuccessResponse } from "../utils/responseUtils.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
-import { registerRestaurant as registerService } from "../services/authService.js";
+import { registerRestaurant as registerService } from "../services/authService.js"; //MTTODO: ändra sen ist för registerRestaurant till register service i service filen.
 
 export const registerRestaurant = async (req, res, next) => {
   try {
@@ -11,9 +11,12 @@ export const registerRestaurant = async (req, res, next) => {
 
     const restaurant = await registerService({ name, slug, email, password });
 
-    sendSuccessResponse(res, "Restaurant registered successfully", {
-      restaurant,
-    });
+    sendSuccessResponse(
+      res,
+      "Restaurant registered successfully",
+      { restaurant },
+      201
+    );
   } catch (err) {
     next(err); // Pass to centralized error handler
   }
