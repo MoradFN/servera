@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import { createError } from "./errorUtils.js"; //MTTODO CHECK PATH
 
 export function createToken(payload) {
   return jwt.sign(payload, process.env.JWT_SECRET, {
@@ -10,6 +11,6 @@ export function verifyToken(token) {
   try {
     return jwt.verify(token, process.env.JWT_SECRET);
   } catch (err) {
-    throw { status: 401, message: "Invalid or expired token." };
+    throw createError(401, "Invalid or expired token.");
   }
 }
