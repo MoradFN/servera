@@ -1,4 +1,5 @@
 import pool from "../config/database.js";
+import { sendSuccessResponse } from "../utils/responseUtils.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
@@ -10,19 +11,11 @@ export const registerRestaurant = async (req, res, next) => {
 
     const restaurant = await registerService({ name, slug, email, password });
 
-    res.status(201).json({
-      success: true,
-      message: "Restaurant registered successfully",
+    sendSuccessResponse(res, "Restaurant registered successfully", {
       restaurant,
     });
   } catch (err) {
-    if (err.status === 409) {
-      return res.status(err.status).json({
-        success: false,
-        message: err.message,
-      });
-    }
-    next(err); // Pass unexpected errors to centralized error handler
+    next(err); // Pass to centralized error handler
   }
 };
 
