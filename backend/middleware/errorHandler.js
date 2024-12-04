@@ -36,6 +36,7 @@ export function errorHandler(err, req, res, next) {
 }
 
 // Middleware for validation error handling
+//MTTODO: IS THIS USED ANYMORE?
 export const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
