@@ -5,13 +5,18 @@ import {
   registerRestaurant,
 } from "../controllers/authController.js";
 import {
-  validateRegisterInput,
-  validateLoginInput,
+  registerValidationRules,
+  loginValidationRules,
 } from "../validators/authValidators.js";
+import { runValidations } from "../middleware/validationMiddleware.js";
 const router = express.Router();
 
-router.post("/register", validateRegisterInput, registerRestaurant);
-router.post("/login", validateLoginInput, loginRestaurant);
+router.post(
+  "/register",
+  runValidations(registerValidationRules),
+  registerRestaurant
+);
+router.post("/login", runValidations(loginValidationRules), loginRestaurant);
 router.post("/logout", logout);
 
 export default router;

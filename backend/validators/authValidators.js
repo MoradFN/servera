@@ -1,7 +1,7 @@
-import { check, validationResult } from "express-validator";
-import { handleValidationErrors } from "../middleware/errorHandler.js";
+import { check } from "express-validator";
 //MTTODO: BETTER VALIDATION
-export const validateRegisterInput = [
+// Validators for registration
+export const registerValidationRules = [
   check("name").trim().notEmpty().withMessage("Name is required"),
   check("slug").trim().notEmpty().withMessage("Slug is required"),
   check("email")
@@ -12,11 +12,10 @@ export const validateRegisterInput = [
   check("password")
     .isLength({ min: 8 })
     .withMessage("Password must be at least 8 characters long"),
-  handleValidationErrors,
 ];
 
-export const validateLoginInput = [
+// Validators for login
+export const loginValidationRules = [
   check("email").trim().isEmail().withMessage("Valid email is required"),
   check("password").notEmpty().withMessage("Password is required"),
-  handleValidationErrors,
 ];
