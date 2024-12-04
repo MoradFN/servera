@@ -12,7 +12,7 @@ import authRoute from "./routes/authRoute.js";
 import restaurantRoute from "./routes/restaurantRoute.js";
 
 dotenv.config();
-
+//
 const app = express();
 
 // Environment-specific configurations för cors, anslutning mellan frontend och backend.
