@@ -1,6 +1,6 @@
 import { createStripeSubscription } from "../services/subscriptionService.js";
 import { sendSuccessResponse } from "../utils/responseUtils.js";
-
+//MTTODO CHECK controller createSubscription.
 export const createSubscription = async (req, res, next) => {
   try {
     const { planId } = req.body; // Plan ID from the frontend
