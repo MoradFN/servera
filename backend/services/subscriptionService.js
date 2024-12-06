@@ -42,6 +42,11 @@ export const createStripeSubscription = async (restaurantId, planId) => {
     await updateRestaurantStripeCustomerId(restaurantId, stripeCustomerId);
   }
 
+  // Check for an existing subscription for the restaurant
+  const existingSubscription = await findSubscriptionByRestaurantId(
+    restaurantId
+  );
+
   // Generate a unique idempotency key for subscription creation
   const idempotencyKey = `subscription_creation_${restaurantId}_${planId}_${Date.now()}`;
 
@@ -57,15 +62,27 @@ export const createStripeSubscription = async (restaurantId, planId) => {
     }
   );
 
-  // Save the subscription to the database
-  await createSubscriptionInDb({
-    restaurantId,
-    stripeSubscriptionId: stripeSubscription.id,
-    plan: planId,
-    status: "trial", // Set initial status to trial
-    trialStartDate: new Date(),
-    trialEndDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
-  });
+  // Decide whether to create or update the subscription in the database
+  if (existingSubscription) {
+    // Update the existing subscription record
+    await updateSubscriptionInDb(restaurantId, {
+      stripeSubscriptionId: stripeSubscription.id,
+      plan: planId,
+      status: "trial", // Update status to trial
+      trialStartDate: new Date(),
+      trialEndDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+    });
+  } else {
+    // Create a new subscription record
+    await createSubscriptionInDb({
+      restaurantId,
+      stripeSubscriptionId: stripeSubscription.id,
+      plan: planId,
+      status: "trial", // Set initial status to trial
+      trialStartDate: new Date(),
+      trialEndDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+    });
+  }
 
   return {
     stripeCustomerId,
