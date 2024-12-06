@@ -25,6 +25,8 @@ import { updateRestaurantStripeCustomerId } from "../models/restaurantModel.js";
 // Only store values you need for internal application logic, like restaurant_id, stripe_customer_id, and stripe_subscription_id.
 // Query Stripe dynamically for other fields, such as status, plan, or trial dates.
 
+// VID ERROR SE STATUS ENUM I DB.
+
 export const createStripeSubscription = async (restaurantId, planId) => {
   // Fetch restaurant details
   const restaurant = await findRestaurantById(restaurantId);
@@ -54,51 +56,41 @@ export const createStripeSubscription = async (restaurantId, planId) => {
     await updateRestaurantStripeCustomerId(restaurantId, stripeCustomerId);
   }
 
-  // Check for an existing subscription for the restaurant
-  const existingSubscription = await findSubscriptionByRestaurantId(
-    restaurantId
-  );
-
-  // Generate a unique idempotency key for subscription creation
-  const idempotencyKey = `subscription_creation_${restaurantId}_${planId}_${Date.now()}`;
-
-  // Create the Stripe subscription (with trial)
+  // Create the Stripe subscription
   const stripeSubscription = await stripe.subscriptions.create(
     {
       customer: stripeCustomerId,
       items: [{ price: planId }],
-      trial_period_days: 7, // Temporary trial period for testing
+      trial_period_days: 7, // Optional: Trial for testing
     },
     {
-      idempotencyKey, // Use the dynamically generated idempotency key
+      idempotencyKey: `subscription_creation_${restaurantId}_${planId}_${Date.now()}`, // Ensure no duplicate subscriptions
     }
   );
 
-  // Decide whether to create or update the subscription in the database
+  // Store only essential data in the database
+  const existingSubscription = await findSubscriptionByRestaurantId(
+    restaurantId
+  );
+
   if (existingSubscription) {
-    // Update the existing subscription record
     await updateSubscriptionInDb(restaurantId, {
       stripeSubscriptionId: stripeSubscription.id,
       plan: planId,
-      status: "trial", // Update status to trial
-      trialStartDate: new Date(),
-      trialEndDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+      status: stripeSubscription.status, // Get status directly from Stripe
     });
   } else {
-    // Create a new subscription record
     await createSubscriptionInDb({
       restaurantId,
       stripeSubscriptionId: stripeSubscription.id,
       plan: planId,
-      status: "trial", // Set initial status to trial
-      trialStartDate: new Date(),
-      trialEndDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+      status: stripeSubscription.status, // Get status directly from Stripe
     });
   }
 
   return {
     stripeCustomerId,
     stripeSubscriptionId: stripeSubscription.id,
-    status: "trial",
+    status: stripeSubscription.status, // Return Stripe's actual subscription status
   };
 };
