@@ -1,4 +1,17 @@
 import pool from "../config/database.js";
+// Find a restaurant by its ID used with  stripe for now.
+export const findRestaurantById = async (id) => {
+  const query = `SELECT id, name, email, slug, is_active FROM restaurants WHERE id = ?`;
+  try {
+    const [results] = await pool.query(query, [id]);
+    if (results.length === 0) {
+      throw new Error("Restaurant not found");
+    }
+    return results[0]; // Return the restaurant object
+  } catch (err) {
+    throw new Error(`Error finding restaurant by ID: ${err.message}`);
+  }
+};
 
 // For Register
 // Find a restaurant by email or slug from the database

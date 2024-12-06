@@ -1,7 +1,11 @@
 import express from "express";
 import pool from "../config/database.js";
 import { getTestData } from "../controllers/testController.js";
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+import { verifyJWT } from "../middleware/authMiddleware.js";
 
+dotenv.config();
 const router = express.Router();
 
 // Test database connection
@@ -19,6 +23,22 @@ router.get("/health", async (req, res) => {
       error: err.message,
     });
   }
+});
+
+// Test verifyJWT middleware
+router.get("/verifyJWT", verifyJWT, (req, res) => {
+  res.json({ success: true, message: "JWT verified" });
+});
+
+// JWT token route
+
+router.get("/token", (req, res) => {
+  const token = jwt.sign(
+    { id: 1, email: "test@example.com" }, // Payload
+    process.env.JWT_SECRET,
+    { expiresIn: "1h" }
+  );
+  res.json({ token });
 });
 
 export default router;

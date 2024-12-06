@@ -3,7 +3,7 @@ import { createError } from "../utils/errorUtils.js";
 
 // Authentication Check
 // Purpose: Ensure the user is logged in and the token is valid.
-export const authenticate = (req, res, next) => {
+export const verifyJWT = (req, res, next) => {
   const token = req.cookies.authToken;
   if (!token) {
     return next(createError(401, "Authentication required"));
