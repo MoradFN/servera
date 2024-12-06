@@ -9,18 +9,28 @@ export const findSubscriptionByRestaurantId = async (restaurantId) => {
 
 // Create a new subscription in the database
 export const createSubscriptionInDb = async (subscriptionData) => {
-  const { restaurantId, stripeCustomerId, stripeSubscriptionId, plan, status } =
-    subscriptionData;
-  const query = `
-        INSERT INTO subscriptions (restaurant_id, stripe_customer_id, stripe_subscription_id, plan, status)
-        VALUES (?, ?, ?, ?, ?)
-    `;
-  await pool.query(query, [
+  const {
     restaurantId,
-    stripeCustomerId,
     stripeSubscriptionId,
     plan,
     status,
+    subscriptionStartDate,
+    subscriptionEndDate,
+  } = subscriptionData;
+
+  const query = `
+    INSERT INTO subscriptions 
+    (restaurant_id, stripe_subscription_id, plan, status, subscription_start_date, subscription_end_date)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
+
+  await pool.query(query, [
+    restaurantId,
+    stripeSubscriptionId,
+    plan,
+    status,
+    subscriptionStartDate,
+    subscriptionEndDate,
   ]);
 };
 

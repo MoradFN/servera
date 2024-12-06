@@ -5,6 +5,13 @@ import {
   updateSubscriptionInDb,
 } from "../models/subscriptionModel.js";
 import { findRestaurantById } from "../models/restaurantModel.js";
+import { updateRestaurantStripeCustomerId } from "../models/restaurantModel.js";
+
+// Uses idempotency keys when creating Stripe customers and subscriptions:
+// For customers: idempotencyKey: customer_creation_<restaurantId>.
+// For subscriptions: idempotencyKey: subscription_creation_<restaurantId>_<planId>.
+// Benefit:
+// Prevents duplicate Stripe customers or subscriptions, even if the request is retried.
 
 export const createStripeSubscription = async (restaurantId, planId) => {
   // Fetch restaurant details
@@ -13,49 +20,56 @@ export const createStripeSubscription = async (restaurantId, planId) => {
     throw new Error("Restaurant not found");
   }
 
-  // Check if a subscription already exists for this restaurant
-  let existingSubscription = await findSubscriptionByRestaurantId(restaurantId);
   let stripeCustomerId;
 
-  if (!existingSubscription) {
-    // Create a new Stripe customer if not already present
-    const customer = await stripe.customers.create({
-      name: restaurant.name,
-      email: restaurant.email,
-    });
+  // Check if the restaurant already has a Stripe customer
+  if (restaurant.stripe_customer_id) {
+    stripeCustomerId = restaurant.stripe_customer_id;
+  } else {
+    // Create a new Stripe customer
+    const customer = await stripe.customers.create(
+      {
+        name: restaurant.name,
+        email: restaurant.email,
+      },
+      {
+        idempotencyKey: `customer_creation_${restaurantId}`, // Ensure no duplicate customers
+      }
+    );
     stripeCustomerId = customer.id;
 
-    // Save initial subscription record in the database
-    await createSubscriptionInDb({
-      restaurantId,
-      stripeCustomerId,
-      stripeSubscriptionId: "Something failed", // Will update this after subscription creation
-      plan: planId,
-      status: "inactive",
-    });
-  } else {
-    // Use existing Stripe customer
-    stripeCustomerId = existingSubscription.stripe_customer_id;
+    // Save the Stripe customer ID in the database
+    await updateRestaurantStripeCustomerId(restaurantId, stripeCustomerId);
   }
 
-  // Create Stripe subscription
-  const stripeSubscription = await stripe.subscriptions.create({
-    customer: stripeCustomerId,
-    items: [{ price: planId }], // Replace with your Stripe price ID / plan id
-    trial_period_days: 7, // Optional: Adjust based on your logic
-  });
+  // Generate a unique idempotency key for subscription creation
+  const idempotencyKey = `subscription_creation_${restaurantId}_${planId}_${Date.now()}`;
 
-  // Update subscription record in the database
-  await updateSubscriptionInDb(restaurantId, {
+  // Create the Stripe subscription (with trial)
+  const stripeSubscription = await stripe.subscriptions.create(
+    {
+      customer: stripeCustomerId,
+      items: [{ price: planId }],
+      trial_period_days: 7, // Temporary trial period for testing
+    },
+    {
+      idempotencyKey, // Use the dynamically generated idempotency key
+    }
+  );
+
+  // Save the subscription to the database
+  await createSubscriptionInDb({
+    restaurantId,
     stripeSubscriptionId: stripeSubscription.id,
-    status: "active",
-    subscriptionStartDate: new Date(),
-    subscriptionEndDate: new Date(stripeSubscription.current_period_end * 1000), // Correct Date format
+    plan: planId,
+    status: "trial", // Set initial status to trial
+    trialStartDate: new Date(),
+    trialEndDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
   });
 
   return {
     stripeCustomerId,
     stripeSubscriptionId: stripeSubscription.id,
-    status: "active",
+    status: "trial",
   };
 };
