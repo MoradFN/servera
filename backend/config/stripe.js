@@ -1,6 +1,3 @@
-import dotenv from "dotenv";
-dotenv.config(); // Load environment variables
-
 import Stripe from "stripe";
 
 // Load Stripe API configuration
