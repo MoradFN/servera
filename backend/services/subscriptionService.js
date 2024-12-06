@@ -13,6 +13,18 @@ import { updateRestaurantStripeCustomerId } from "../models/restaurantModel.js";
 // Benefit:
 // Prevents duplicate Stripe customers or subscriptions, even if the request is retried.
 
+// FUTURE IMPLEMENTATIONS:
+// Webhook Flow:
+// Listen to subscription-related events like:
+// customer.subscription.created
+// customer.subscription.updated
+// customer.subscription.deleted
+// Update subscriptions table with the details from Stripe’s payload.
+// TRIAL WAS ONLY FOR TEST PURPOSES
+// Minimal Database Updates
+// Only store values you need for internal application logic, like restaurant_id, stripe_customer_id, and stripe_subscription_id.
+// Query Stripe dynamically for other fields, such as status, plan, or trial dates.
+
 export const createStripeSubscription = async (restaurantId, planId) => {
   // Fetch restaurant details
   const restaurant = await findRestaurantById(restaurantId);
