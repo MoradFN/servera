@@ -47,7 +47,7 @@ app.use(cookieParser());
 // Routes
 app.use("/api/auth", authRoute);
 app.use("/api/restaurants", restaurantRoute);
-app.use("/api/subscriptions ", subscriptionRoutes);
+app.use("/api/subscriptions", subscriptionRoutes);
 
 app.use("/api/test", testRoute);
 

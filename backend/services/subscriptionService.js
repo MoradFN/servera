@@ -29,7 +29,7 @@ export const createStripeSubscription = async (restaurantId, planId) => {
     await createSubscriptionInDb({
       restaurantId,
       stripeCustomerId,
-      stripeSubscriptionId: null, // Will update this after subscription creation
+      stripeSubscriptionId: "Something failed", // Will update this after subscription creation
       plan: planId,
       status: "inactive",
     });
@@ -41,16 +41,16 @@ export const createStripeSubscription = async (restaurantId, planId) => {
   // Create Stripe subscription
   const stripeSubscription = await stripe.subscriptions.create({
     customer: stripeCustomerId,
-    items: [{ price: planId }], // Replace with your Stripe price ID
-    trial_period_days: 7, // Optional: Specify free trial days
+    items: [{ price: planId }], // Replace with your Stripe price ID / plan id
+    trial_period_days: 7, // Optional: Adjust based on your logic
   });
 
-  // Update the subscription in the database
+  // Update subscription record in the database
   await updateSubscriptionInDb(restaurantId, {
     stripeSubscriptionId: stripeSubscription.id,
     status: "active",
     subscriptionStartDate: new Date(),
-    subscriptionEndDate: stripeSubscription.current_period_end * 1000, // Stripe gives a timestamp in seconds
+    subscriptionEndDate: new Date(stripeSubscription.current_period_end * 1000), // Correct Date format
   });
 
   return {

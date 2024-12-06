@@ -4,7 +4,7 @@ import { verifyJWT } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Route to create a Stripe Checkout session (protected by JWT middleware)
+// Route to create a subscription (protected by JWT middleware)
 router.post("/subscribe", verifyJWT, createSubscription);
 
 export default router;
