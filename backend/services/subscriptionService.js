@@ -25,7 +25,7 @@ import { updateRestaurantStripeCustomerId } from "../models/restaurantModel.js";
 // Only store values you need for internal application logic, like restaurant_id, stripe_customer_id, and stripe_subscription_id.
 // Query Stripe dynamically for other fields, such as status, plan, or trial dates.
 
-// VID ERROR SE STATUS ENUM I DB.
+//MTTODO - CRITICAL: VID ERROR SE STATUS ENUM I DB - kanske inte stämmer äöverens med de som skickas från STRIPE.
 
 //MTTODO: BETTER ERROR HANDLING, and separation of code for createStripeSubscription
 
