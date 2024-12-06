@@ -1,4 +1,5 @@
 import pool from "../config/database.js";
+//MTTODO BETTER ERROR HANDLING
 
 // Find subscription by restaurant ID
 export const findSubscriptionByRestaurantId = async (restaurantId) => {

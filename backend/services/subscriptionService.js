@@ -27,6 +27,21 @@ import { updateRestaurantStripeCustomerId } from "../models/restaurantModel.js";
 
 // VID ERROR SE STATUS ENUM I DB.
 
+//MTTODO: BETTER ERROR HANDLING, and separation of code for createStripeSubscription
+
+/**
+ * Creates a new Stripe subscription for the given restaurant and plan.
+ *
+ * @param {number} restaurantId The ID of the restaurant to create a subscription for.
+ * @param {string} planId The ID of the plan to subscribe to.
+ *
+ * @returns {Promise<{stripeCustomerId: string, stripeSubscriptionId: string, status: string}>}
+ *
+ * If the restaurant already has a Stripe customer, it will be reused.
+ * If the restaurant does not have a Stripe customer, a new one will be created.
+ * The function will ensure that there is only one subscription per restaurant-plan pair.
+ * The function will return the Stripe customer ID, Stripe subscription ID, and the subscription status directly from Stripe.
+ */
 export const createStripeSubscription = async (restaurantId, planId) => {
   // Fetch restaurant details
   const restaurant = await findRestaurantById(restaurantId);
