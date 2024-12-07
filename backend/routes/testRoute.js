@@ -118,4 +118,34 @@ router.post("/attachPaymentMethod/logged-in", verifyJWT, async (req, res) => {
   }
 });
 
+router.post("/detachPaymentMethod", async (req, res) => {
+  try {
+    const { paymentMethodId } = req.body;
+
+    if (!paymentMethodId) {
+      return res.status(400).json({
+        success: false,
+        message: "Payment Method ID is required.",
+      });
+    }
+
+    // Detach payment method from the customer (Stripe will handle it automatically)
+    const detachedPaymentMethod = await stripe.paymentMethods.detach(
+      paymentMethodId
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Payment method successfully detached.",
+      detachedPaymentMethod,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to detach payment method.",
+      error: err.message,
+    });
+  }
+});
+
 export default router;
