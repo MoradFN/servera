@@ -30,17 +30,25 @@ import { updateRestaurantStripeCustomerId } from "../models/restaurantModel.js";
 //MTTODO: BETTER ERROR HANDLING, and separation of code for createStripeSubscription
 
 /**
- * Creates a new Stripe subscription for the given restaurant and plan.
+ * Creates a Stripe subscription for a specified restaurant and plan.
  *
- * @param {number} restaurantId The ID of the restaurant to create a subscription for.
- * @param {string} planId The ID of the plan to subscribe to.
+ * This function checks if the restaurant already has a Stripe customer ID.
+ * If not, it creates a new Stripe customer and updates the restaurant's
+ * record in the database with the newly created Stripe customer ID.
  *
- * @returns {Promise<{stripeCustomerId: string, stripeSubscriptionId: string, status: string}>}
+ * If a payment method ID is provided, it attaches the payment method
+ * to the Stripe customer and sets it as the default. If not provided,
+ * it uses the existing default payment method for the customer.
  *
- * If the restaurant already has a Stripe customer, it will be reused.
- * If the restaurant does not have a Stripe customer, a new one will be created.
- * The function will ensure that there is only one subscription per restaurant-plan pair.
- * The function will return the Stripe customer ID, Stripe subscription ID, and the subscription status directly from Stripe.
+ * Subsequently, a Stripe subscription is created for the customer
+ * with the specified plan, using idempotency keys to prevent duplicates.
+ * The subscription details are then updated or created in the local database.
+ *
+ * @param {string} restaurantId - The ID of the restaurant.
+ * @param {string} planId - The ID of the subscription plan.
+ * @param {string} [paymentMethodId] - The ID of the payment method to attach and set as default.
+ * @returns {Promise<Object>} - An object containing the Stripe customer ID, subscription ID, and subscription status.
+ * @throws {Error} - Throws an error if the restaurant is not found, or if no default payment method exists when not provided.
  */
 export const createStripeSubscription = async (
   restaurantId,
