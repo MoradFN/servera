@@ -42,7 +42,11 @@ import { updateRestaurantStripeCustomerId } from "../models/restaurantModel.js";
  * The function will ensure that there is only one subscription per restaurant-plan pair.
  * The function will return the Stripe customer ID, Stripe subscription ID, and the subscription status directly from Stripe.
  */
-export const createStripeSubscription = async (restaurantId, planId) => {
+export const createStripeSubscription = async (
+  restaurantId,
+  planId,
+  paymentMethodId
+) => {
   // Fetch restaurant details
   const restaurant = await findRestaurantById(restaurantId);
   if (!restaurant) {
@@ -71,17 +75,40 @@ export const createStripeSubscription = async (restaurantId, planId) => {
     await updateRestaurantStripeCustomerId(restaurantId, stripeCustomerId);
   }
 
+  const attachedPaymentMethod = await stripe.paymentMethods.attach(
+    paymentMethodId,
+    {
+      customer: stripeCustomerId,
+    }
+  );
+  console.log("Attached Payment Method:", attachedPaymentMethod);
+
+  // // Set the default payment method for the customer
+  // await stripe.customers.update(stripeCustomerId, {
+  //   invoice_settings: { default_payment_method: paymentMethodId },
+  // });
+
+  // Set the default payment method for the customer
+  const updatedCustomer = await stripe.customers.update(stripeCustomerId, {
+    invoice_settings: { default_payment_method: paymentMethodId },
+  });
+  console.log(
+    "Updated Customer Invoice Settings:",
+    updatedCustomer.invoice_settings
+  );
+
   // Create the Stripe subscription
   const stripeSubscription = await stripe.subscriptions.create(
     {
       customer: stripeCustomerId,
       items: [{ price: planId }],
-      trial_period_days: 7, // Optional: Trial for testing
     },
     {
       idempotencyKey: `subscription_creation_${restaurantId}_${planId}_${Date.now()}`, // Ensure no duplicate subscriptions
     }
   );
+
+  console.log("Stripe Subscription Created:", stripeSubscription);
 
   // Store only essential data in the database
   const existingSubscription = await findSubscriptionByRestaurantId(
