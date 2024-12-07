@@ -10,6 +10,7 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import testRoute from "./routes/testRoute.js";
 import authRoute from "./routes/authRoute.js";
 import restaurantRoute from "./routes/restaurantRoute.js";
+import subscriptionRoutes from "./routes/subscriptionRoutes.js";
 
 dotenv.config();
 //
@@ -46,6 +47,7 @@ app.use(cookieParser());
 // Routes
 app.use("/api/auth", authRoute);
 app.use("/api/restaurants", restaurantRoute);
+app.use("/api/subscriptions", subscriptionRoutes);
 
 app.use("/api/test", testRoute);
 

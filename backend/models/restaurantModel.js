@@ -1,5 +1,67 @@
 import pool from "../config/database.js";
+//////////////////////////////////////////////////////////////////////////////////
 
+// Find a restaurant by its ID used with  creating a subscription for now.
+export const findRestaurantById = async (id) => {
+  const query = `SELECT id, name, email, slug, is_active, stripe_customer_id FROM restaurants WHERE id = ?`;
+  try {
+    const [results] = await pool.query(query, [id]);
+    if (results.length === 0) {
+      throw new Error("Restaurant not found");
+    }
+    return results[0]; // Return the restaurant object
+  } catch (err) {
+    throw new Error(`Error finding restaurant by ID: ${err.message}`);
+  }
+};
+
+export const updateRestaurantStripeCustomerId = async (
+  restaurantId,
+  stripeCustomerId
+) => {
+  const query = `UPDATE restaurants SET stripe_customer_id = ? WHERE id = ?`;
+  try {
+    const [result] = await pool.query(query, [stripeCustomerId, restaurantId]);
+    if (result.affectedRows === 0) {
+      throw new Error(
+        `No restaurant found with ID ${restaurantId}. Update failed.`
+      );
+    }
+    return result; // Return the result for further use if needed
+  } catch (err) {
+    throw new Error(
+      `Error updating Stripe customer ID in database: ${err.message}`
+    );
+  }
+};
+
+// export const updateRestaurantStripeCustomerId = async (
+//   id,
+//   stripeCustomerId
+// ) => {
+//   const query = `UPDATE restaurants SET stripe_customer_id = ? WHERE id = ?`;
+//   try {
+//     const [result] = await pool.query(query, [stripeCustomerId, id]);
+//     return result;
+//   } catch (err) {
+//     throw new Error(
+//       `Error updating restaurant stripe customer ID: ${err.message}`
+//     );
+//   }
+// };
+// export const updateRestaurantStripeCustomerId = async (
+//   restaurantId,
+//   stripeCustomerId
+// ) => {
+//   const query = `UPDATE restaurants SET stripe_customer_id = ? WHERE id = ?`;
+//   try {
+//     await pool.query(query, [stripeCustomerId, restaurantId]);
+//   } catch (err) {
+//     throw new Error(`Error updating Stripe customer ID: ${err.message}`);
+//   }
+// };
+
+//////////////////////////////////////////////////////////////////////////////////
 // For Register
 // Find a restaurant by email or slug from the database
 export const findRestaurantByEmailOrSlug = async (email, slug) => {
