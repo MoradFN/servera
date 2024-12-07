@@ -84,7 +84,25 @@ export const createStripeSubscription = async (
     await stripe.customers.update(stripeCustomerId, {
       invoice_settings: { default_payment_method: paymentMethodId },
     });
+    console.log(
+      `Provided payment method ${paymentMethodId} was attached and set as default.`
+    ); //MTTODO: remove
+  } else {
+    // BELOW IS DEBUG - REMOVE LATER
+    // Fetch the default payment method for the customer
+    const customer = await stripe.customers.retrieve(stripeCustomerId);
+    const defaultPaymentMethod =
+      customer.invoice_settings.default_payment_method;
+
+    console.log(
+      `No payment method provided. Using default payment method: ${defaultPaymentMethod}`
+    );
+
+    if (!defaultPaymentMethod) {
+      throw new Error("No default payment method exists for this customer.");
+    }
   }
+  //ABOVE IS DEBUG - remove later
 
   // Create the Stripe subscription
   const stripeSubscription = await stripe.subscriptions.create(
@@ -97,7 +115,7 @@ export const createStripeSubscription = async (
     }
   );
 
-  console.log("Stripe Subscription Created:", stripeSubscription);
+  // console.log("Stripe Subscription Created:", stripeSubscription);
 
   // Update or create subscription in the database
 
