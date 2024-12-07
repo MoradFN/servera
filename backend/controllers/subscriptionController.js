@@ -7,10 +7,10 @@ export const createSubscription = async (req, res, next) => {
     const { planId, paymentMethodId } = req.body; // Plan ID and Payment Method ID from the frontend
     const restaurantId = req.user.id; // From the JWT payload
 
-    if (!planId || !paymentMethodId) {
+    if (!planId) {
       return res.status(400).json({
         success: false,
-        message: "Plan ID and Payment Method ID are required",
+        message: "Plan ID is required",
       });
     }
 
@@ -18,7 +18,7 @@ export const createSubscription = async (req, res, next) => {
     const subscription = await createStripeSubscription(
       restaurantId,
       planId,
-      paymentMethodId
+      paymentMethodId // Pass undefined if not provided
     );
 
     sendSuccessResponse(

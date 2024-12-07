@@ -75,27 +75,16 @@ export const createStripeSubscription = async (
     await updateRestaurantStripeCustomerId(restaurantId, stripeCustomerId);
   }
 
-  const attachedPaymentMethod = await stripe.paymentMethods.attach(
-    paymentMethodId,
-    {
+  // Attach and set payment method if provided
+  if (paymentMethodId) {
+    await stripe.paymentMethods.attach(paymentMethodId, {
       customer: stripeCustomerId,
-    }
-  );
-  console.log("Attached Payment Method:", attachedPaymentMethod);
+    });
 
-  // // Set the default payment method for the customer
-  // await stripe.customers.update(stripeCustomerId, {
-  //   invoice_settings: { default_payment_method: paymentMethodId },
-  // });
-
-  // Set the default payment method for the customer
-  const updatedCustomer = await stripe.customers.update(stripeCustomerId, {
-    invoice_settings: { default_payment_method: paymentMethodId },
-  });
-  console.log(
-    "Updated Customer Invoice Settings:",
-    updatedCustomer.invoice_settings
-  );
+    await stripe.customers.update(stripeCustomerId, {
+      invoice_settings: { default_payment_method: paymentMethodId },
+    });
+  }
 
   // Create the Stripe subscription
   const stripeSubscription = await stripe.subscriptions.create(
@@ -109,6 +98,8 @@ export const createStripeSubscription = async (
   );
 
   console.log("Stripe Subscription Created:", stripeSubscription);
+
+  // Update or create subscription in the database
 
   // Store only essential data in the database
   const existingSubscription = await findSubscriptionByRestaurantId(
