@@ -42,16 +42,15 @@ const corsOptions = {
 };
 
 // Middlewares
-app.use(express.json());
 app.use(cors(corsOptions)); // MTTODO: CORS middleware
 app.use(cookieParser());
 
+app.use("/api/webhooks", webhookRoute);
+app.use(express.json());
 // Routes
 app.use("/api/auth", authRoute);
 app.use("/api/restaurants", restaurantRoute);
 app.use("/api/subscriptions", subscriptionRoutes);
-
-app.use("/api/webhooks", webhookRoute);
 
 app.use("/api/test", testRoute);
 
