@@ -74,7 +74,7 @@ export const createStripeSubscription = async (
         email: restaurant.email,
       },
       {
-        idempotencyKey: `customer_creation_${restaurantId}`, // Ensure no duplicate customers
+        idempotencyKey: `customer_creation_${restaurantId}`, // Ensure no duplicate customers /// MTTODO:Skapade problem när jag tog bort endast customer_id frpn databasen? annars validera i stripe om användaren finns.
       }
     );
     stripeCustomerId = customer.id;
