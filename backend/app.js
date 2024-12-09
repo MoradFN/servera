@@ -12,6 +12,8 @@ import authRoute from "./routes/authRoute.js";
 import restaurantRoute from "./routes/restaurantRoute.js";
 import subscriptionRoutes from "./routes/subscriptionRoutes.js";
 
+// import webhookRoute from "./routes/webhookRoute.js";
+
 dotenv.config();
 //
 const app = express();
@@ -48,6 +50,8 @@ app.use(cookieParser());
 app.use("/api/auth", authRoute);
 app.use("/api/restaurants", restaurantRoute);
 app.use("/api/subscriptions", subscriptionRoutes);
+
+// app.use("/api/webhooks", webhookRoute);
 
 app.use("/api/test", testRoute);
 
