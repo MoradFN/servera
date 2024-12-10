@@ -1,34 +1,54 @@
+import express from "express";
+
 export const stripeEvents = async (event) => {
   const { type, data } = event;
   const eventData = data.object; // Correct variable usage
 
   switch (type) {
     case "customer.subscription.created":
-      console.log(`Subscription Created: ${eventData.id}`);
-      console.log("EVENT DATA: customer.subscription.created", eventData);
+      console.log("📬 EVENT: customer.subscription.created");
+      console.log(`✅ Subscription Created: ${eventData.id}`);
+      console.log(`📄 Billing Reason: ${eventData.billing_reason}`);
+
+      // console.log("EVENT DATA:", eventData);
       break;
 
     case "customer.subscription.updated":
-      console.log(`Subscription Updated: ${eventData.id}`);
-      console.log("EVENT DATA: customer.subscription.updated", eventData);
+      console.log("📬 EVENT: customer.subscription.updated");
+      console.log(`🔄 Subscription Updated: ${eventData.id}`);
+      console.log(`📄 Billing Reason: ${eventData.billing_reason}`);
+
+      // console.log("EVENT DATA:", eventData);
       break;
 
     case "invoice.payment_succeeded":
-      console.log(
-        `Payment Succeeded for Subscription: ${eventData.subscription}`
-      );
-      console.log("EVENT DATA: invoice.payment_succeeded", eventData);
+      console.log("📬 EVENT: invoice.payment_succeeded");
+      console.log(`💳 Payment Succeeded: ${eventData.id}`);
+      console.log(`🔗 Subscription: ${eventData.subscription}`);
+      console.log(`📄 Billing Reason: ${eventData.billing_reason}`);
+      // console.log("EVENT DATA: ", eventData);
+
+      if (eventData.billing_reason === "subscription_cycle") {
+        console.log("♻️ Recurring Payment Succeeded:", eventData.subscription);
+      } else if (eventData.billing_reason === "subscription_create") {
+        console.log(
+          "📦 Manual Subscription Payment Succeeded:",
+          eventData.subscription
+        );
+      }
+
       break;
 
     case "invoice.payment_failed":
+      console.error("❌ EVENT: invoice.payment_failed");
       console.error(
-        `Payment Failed for Subscription: ${eventData.subscription}`
+        `❌ Payment Failed for Subscription: ${eventData.subscription}`
       );
-      console.error("EVENT DATA: invoice.payment_failed", eventData);
+      console.error("❌ EVENT DATA:", eventData);
       break;
 
     default:
-      console.log(`(WEBHOOK DEFAULT): Unhandled Event Type: ${type}`);
-      console.log("(WEBHOOK DEFAULT): UNHANDELED EVENT DATA:", eventData);
+      console.warn(`⚠️ Unhandled Event Type: ${type}`);
+    // console.warn("⚠️ UNHANDLED EVENT DATA:", eventData);
   }
 };
