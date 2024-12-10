@@ -8,11 +8,10 @@ export const stripeEvents = async (event) => {
     case "customer.subscription.created":
       console.log("📬 EVENT: customer.subscription.created");
       console.log(`✅ Subscription Created: ${eventData.id}`);
-
+      // FÖR ATT UPDATERA RESTEN AV TABELLEN VID SKAPANDE AV SUBSCRIPTION?, SOM TID OSV.
       // console.log("EVENT DATA:", eventData);
       break;
 
-    case "customer.subscription.updated":
     case "customer.subscription.updated":
       console.log("📬 EVENT: customer.subscription.updated");
       console.log(`🔄 Subscription Updated: ${eventData.id}`);
