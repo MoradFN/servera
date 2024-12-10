@@ -59,6 +59,7 @@ export const updateSubscriptionInDb = async (restaurantId, updateData) => {
   ]);
 };
 
+////MTTODO: CRITICAL! ERROR CHECK - BEST PRACTICE ETC.
 /// WEBHOOK EVENT // MTTODO CHECK OM JAG SKA GÖRA ERROR OCH BLOCKERA STRIPE OM DE INTE KAN SÄTTAS IN HÄR
 export const updateSubscriptionStatus = async ({
   stripeSubscriptionId,
