@@ -1,5 +1,5 @@
 import { updateSubscriptionStatus } from "../models/subscriptionModel.js";
-
+////MTTODO: CRITICAL! ERROR CHECK - BEST PRACTICE ETC.
 export const stripeEvents = async (event) => {
   const { type, data } = event;
   const eventData = data.object; // Correct variable usage
