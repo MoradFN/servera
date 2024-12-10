@@ -1,5 +1,5 @@
 import express from "express";
-import { handleStripeWebhook } from "../controllers/webhookController.js";
+import { stripeWebhookController } from "../controllers/webhookController.js";
 
 const router = express.Router();
 
@@ -7,7 +7,7 @@ const router = express.Router();
 router.post(
   "/stripe",
   express.raw({ type: "application/json" }), // Use raw body for Stripe
-  handleStripeWebhook
+  stripeWebhookController
 );
 
 //EXEMPEL:

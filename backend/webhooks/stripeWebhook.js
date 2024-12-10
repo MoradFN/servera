@@ -1,9 +1,4 @@
-import {
-  createSubscriptionRecord,
-  updateSubscriptionStatus,
-} from "../models/subscriptionModel.js";
-
-export const processStripeEvent = async (event) => {
+export const webhookEvents = async (event) => {
   const { type, data } = event;
   const subscription = data.object;
 
