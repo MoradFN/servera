@@ -1,49 +1,59 @@
-import {
-  createSubscriptionRecord,
-  updateSubscriptionStatus,
-} from "../models/subscriptionModel.js";
-
-export const processStripeEvent = async (event) => {
+export const stripeEvents = async (event) => {
   const { type, data } = event;
-  const subscription = data.object;
+  const eventData = data.object; // Correct variable usage
 
   switch (type) {
     case "customer.subscription.created":
-      console.log(
-        `Subscription Created: ${subscription.id} , Body from Subscription created: ${req.body}`
-      );
-      await createSubscriptionRecord({
-        stripeSubscriptionId: subscription.id,
-        customerId: subscription.customer,
-        planId: subscription.items.data[0].price.id,
-        status: subscription.status,
-        startDate: subscription.start_date,
-        endDate: subscription.current_period_end,
-      });
+      console.log("📬 EVENT: customer.subscription.created");
+      console.log(`✅ Subscription Created: ${eventData.id}`);
+      // FÖR ATT UPDATERA RESTEN AV TABELLEN VID SKAPANDE AV SUBSCRIPTION?, SOM TID OSV.
+      // console.log("EVENT DATA:", eventData);
       break;
 
-    case "invoice.payment_succeeded":
+    case "customer.subscription.updated":
+      console.log("📬 EVENT: customer.subscription.updated");
+      console.log(`🔄 Subscription Updated: ${eventData.id}`);
+      console.log(`🟢 New Status: ${eventData.status}`);
+
+      // Update database directly based on subscription's current status
+      // await updateSubscriptionStatus({
+      //   stripeSubscriptionId: eventData.id,
+      //   status: eventData.status, // Directly from Stripe
+      // });
+
       console.log(
-        `Payment Succeeded: ${subscription.subscription}  , Body from payment succeded: ${req.body}`
+        `✅ Database Updated: Subscription ${eventData.id}, Status: ${eventData.status}`
       );
-      await updateSubscriptionStatus({
-        stripeSubscriptionId: subscription.subscription,
-        status: "active",
-      });
       break;
+
+    // case "invoice.payment_succeeded":
+    //   console.log("📬 EVENT: invoice.payment_succeeded");
+    //   console.log(`💳 Payment Succeeded: ${eventData.id}`);
+    //   console.log(`🔗 Subscription: ${eventData.subscription}`);
+    //   console.log(`📄 Billing Reason: ${eventData.billing_reason}`);
+    //   // console.log("EVENT DATA: ", eventData);
+
+    //   if (eventData.billing_reason === "subscription_cycle") {
+    //     console.log("♻️ Recurring Payment Succeeded:", eventData.subscription);
+    //   } else if (eventData.billing_reason === "subscription_create") {
+    //     console.log(
+    //       "📦 Manual Subscription Payment Succeeded:",
+    //       eventData.subscription
+    //     );
+    //   }
+
+    //   break;
 
     case "invoice.payment_failed":
+      console.error("❌ EVENT: invoice.payment_failed");
       console.error(
-        `Payment Failed: ${subscription.subscription} , Body from Payment Failed: ${req.body}`
+        `❌ Payment Failed for Subscription: ${eventData.subscription}`
       );
-      await updateSubscriptionStatus({
-        stripeSubscriptionId: subscription.subscription,
-        status: "past_due",
-      });
+      console.error("❌ EVENT DATA:", eventData);
       break;
 
     default:
-      console.log(req.body.type);
-      console.log(`Unhandled Event Type: ${type}`);
+    // console.warn(`⚠️ Unhandled Event Type: ${type}`);
+    // console.warn("⚠️ UNHANDLED EVENT DATA:", eventData);
   }
 };

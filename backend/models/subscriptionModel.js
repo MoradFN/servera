@@ -1,4 +1,6 @@
 import pool from "../config/database.js";
+import { format } from "date-fns";
+
 //MTTODO BETTER ERROR HANDLING
 
 // Find subscription by restaurant ID
@@ -35,7 +37,7 @@ export const createSubscriptionInDb = async (subscriptionData) => {
   ]);
 };
 
-// Update subscription in the database
+// Update subscription in the database //MTTODO:, kan ej va rätt att göra så, update och skapa duplicate i stripe?? if exists? wtf. SEE SERVICE.
 export const updateSubscriptionInDb = async (restaurantId, updateData) => {
   const {
     stripeSubscriptionId,
@@ -55,4 +57,49 @@ export const updateSubscriptionInDb = async (restaurantId, updateData) => {
     subscriptionEndDate,
     restaurantId,
   ]);
+};
+
+/// WEBHOOK EVENT // MTTODO CHECK OM JAG SKA GÖRA ERROR OCH BLOCKERA STRIPE OM DE INTE KAN SÄTTAS IN HÄR
+export const updateSubscriptionStatus = async ({
+  stripeSubscriptionId,
+  status,
+  subscriptionStartDate,
+  subscriptionEndDate,
+}) => {
+  const query = `
+    UPDATE subscriptions
+    SET status = ?, subscription_start_date = ?, subscription_end_date = ?
+    WHERE stripe_subscription_id = ?
+  `;
+
+  try {
+    // Convert Unix timestamps to MySQL datetime format // MTTODO CHECK
+    const formattedStartDate = subscriptionStartDate
+      ? format(new Date(subscriptionStartDate * 1000), "yyyy-MM-dd HH:mm:ss")
+      : null;
+
+    const formattedEndDate = subscriptionEndDate
+      ? format(new Date(subscriptionEndDate * 1000), "yyyy-MM-dd HH:mm:ss")
+      : null;
+    const [result] = await pool.query(query, [
+      status,
+      formattedStartDate || null,
+      formattedEndDate || null,
+      stripeSubscriptionId,
+    ]);
+
+    console.log("🔍 Query Result:", result);
+
+    if (result.affectedRows === 0) {
+      console.error(
+        `❌ No Subscription Found in Database: ${stripeSubscriptionId}`
+      );
+      throw new Error(`No subscription found with ID ${stripeSubscriptionId}`);
+    }
+
+    console.log(`✅ Subscription ${stripeSubscriptionId} Updated Successfully`);
+  } catch (err) {
+    console.error("❌ Database Update Error:", err.message);
+    throw err;
+  }
 };
