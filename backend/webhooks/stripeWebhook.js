@@ -50,17 +50,19 @@ export const stripeEvents = async (event) => {
       break;
 
     /*** HANDLE PAYMENT FAILURES ***/
+    // Trigger notifications or custom logging.
     case "invoice.payment_failed":
       try {
         console.error("❌ EVENT: invoice.payment_failed");
         console.error(
           `❌ Payment Failed for Subscription: ${eventData.subscription}`
         );
+        console.log(eventData);
 
-        await updateSubscriptionStatus({
-          stripeSubscriptionId: eventData.subscription,
-          status: "past_due",
-        });
+        // await updateSubscriptionStatus({
+        //   stripeSubscriptionId: eventData.subscription,
+        //   status: "past_due",
+        // });
 
         console.error("❌ Subscription Marked as Past Due in DB.");
       } catch (err) {
