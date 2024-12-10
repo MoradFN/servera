@@ -1,5 +1,23 @@
 import { updateSubscriptionStatus } from "../models/subscriptionModel.js";
+
+// INITIAL SUBSCRIPTION NOT HANDLED HERE.
 ////MTTODO: CRITICAL! ERROR CHECK - BEST PRACTICE ETC.
+// Expand Webhook Logic:
+// Add event handling for:
+// customer.subscription.deleted (Handle cancellations)
+// invoice.payment_failed (Send reminders/emails)
+// invoice.upcoming (Optional: Notify about upcoming charges).
+// Database Integrity Checks:
+// Ensure data integrity checks after webhook events.
+// Add logging for failed webhooks and retries.
+
+/**
+ * Handles Stripe Webhook events related to subscriptions and payments.
+ * @param {Object} event - The Stripe Webhook event object.
+ * @param {string} event.type - The type of event (e.g. "customer.subscription.updated", "invoice.payment_failed").
+ * @param {Object} event.data - The event data object.
+ * @param {Object} event.data.object - The event data object (correct variable usage).
+ */
 export const stripeEvents = async (event) => {
   const { type, data } = event;
   const eventData = data.object; // Correct variable usage
