@@ -3,7 +3,7 @@ import { stripeEvents } from "../webhooks/stripeWebhook.js";
 export const stripeWebhookController = async (req, res) => {
   try {
     const event = JSON.parse(req.body.toString("utf8"));
-    console.log("Webhook Event Received:", event);
+    // console.log("Webhook Event Received:", event.type);
 
     await stripeEvents(event); // Delegate to the webhookEvents
 
