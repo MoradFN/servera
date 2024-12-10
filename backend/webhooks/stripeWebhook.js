@@ -1,4 +1,4 @@
-export const webhookEvents = async (event) => {
+export const stripeEvents = async (event) => {
   const { type, data } = event;
   const subscription = data.object;
 
