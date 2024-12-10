@@ -8,36 +8,44 @@ export const stripeEvents = async (event) => {
     case "customer.subscription.created":
       console.log("📬 EVENT: customer.subscription.created");
       console.log(`✅ Subscription Created: ${eventData.id}`);
-      console.log(`📄 Billing Reason: ${eventData.billing_reason}`);
 
       // console.log("EVENT DATA:", eventData);
       break;
 
     case "customer.subscription.updated":
+    case "customer.subscription.updated":
       console.log("📬 EVENT: customer.subscription.updated");
       console.log(`🔄 Subscription Updated: ${eventData.id}`);
-      console.log(`📄 Billing Reason: ${eventData.billing_reason}`);
+      console.log(`🟢 New Status: ${eventData.status}`);
 
-      // console.log("EVENT DATA:", eventData);
+      // Update database directly based on subscription's current status
+      // await updateSubscriptionStatus({
+      //   stripeSubscriptionId: eventData.id,
+      //   status: eventData.status, // Directly from Stripe
+      // });
+
+      console.log(
+        `✅ Database Updated: Subscription ${eventData.id}, Status: ${eventData.status}`
+      );
       break;
 
-    case "invoice.payment_succeeded":
-      console.log("📬 EVENT: invoice.payment_succeeded");
-      console.log(`💳 Payment Succeeded: ${eventData.id}`);
-      console.log(`🔗 Subscription: ${eventData.subscription}`);
-      console.log(`📄 Billing Reason: ${eventData.billing_reason}`);
-      // console.log("EVENT DATA: ", eventData);
+    // case "invoice.payment_succeeded":
+    //   console.log("📬 EVENT: invoice.payment_succeeded");
+    //   console.log(`💳 Payment Succeeded: ${eventData.id}`);
+    //   console.log(`🔗 Subscription: ${eventData.subscription}`);
+    //   console.log(`📄 Billing Reason: ${eventData.billing_reason}`);
+    //   // console.log("EVENT DATA: ", eventData);
 
-      if (eventData.billing_reason === "subscription_cycle") {
-        console.log("♻️ Recurring Payment Succeeded:", eventData.subscription);
-      } else if (eventData.billing_reason === "subscription_create") {
-        console.log(
-          "📦 Manual Subscription Payment Succeeded:",
-          eventData.subscription
-        );
-      }
+    //   if (eventData.billing_reason === "subscription_cycle") {
+    //     console.log("♻️ Recurring Payment Succeeded:", eventData.subscription);
+    //   } else if (eventData.billing_reason === "subscription_create") {
+    //     console.log(
+    //       "📦 Manual Subscription Payment Succeeded:",
+    //       eventData.subscription
+    //     );
+    //   }
 
-      break;
+    //   break;
 
     case "invoice.payment_failed":
       console.error("❌ EVENT: invoice.payment_failed");
@@ -48,7 +56,7 @@ export const stripeEvents = async (event) => {
       break;
 
     default:
-      console.warn(`⚠️ Unhandled Event Type: ${type}`);
+    // console.warn(`⚠️ Unhandled Event Type: ${type}`);
     // console.warn("⚠️ UNHANDLED EVENT DATA:", eventData);
   }
 };
