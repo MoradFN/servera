@@ -1,59 +1,55 @@
-import express from "express";
-
+import { updateSubscriptionStatus } from "../models/subscriptionModel.js";
+////MTTODO: CRITICAL! ERROR CHECK - BEST PRACTICE ETC.
 export const stripeEvents = async (event) => {
   const { type, data } = event;
   const eventData = data.object; // Correct variable usage
 
   switch (type) {
-    case "customer.subscription.created":
-      console.log("📬 EVENT: customer.subscription.created");
-      console.log(`✅ Subscription Created: ${eventData.id}`);
-      // FÖR ATT UPDATERA RESTEN AV TABELLEN VID SKAPANDE AV SUBSCRIPTION?, SOM TID OSV.
-      // console.log("EVENT DATA:", eventData);
-      break;
-
+    /*** HANDLE SUBSCRIPTION UPDATES ***/
     case "customer.subscription.updated":
-      console.log("📬 EVENT: customer.subscription.updated");
-      console.log(`🔄 Subscription Updated: ${eventData.id}`);
-      console.log(`🟢 New Status: ${eventData.status}`);
+      try {
+        console.log("📬 EVENT: customer.subscription.updated");
+        console.log(`🔄 Subscription Updated: ${eventData.id}`);
+        console.log(`🟢 New Status: ${eventData.status}`);
+        console.log(
+          `📅 Start Date: ${eventData.current_period_start}, End Date: ${eventData.current_period_end}`
+        );
+        console.log(eventData);
 
-      // Update database directly based on subscription's current status
-      // await updateSubscriptionStatus({
-      //   stripeSubscriptionId: eventData.id,
-      //   status: eventData.status, // Directly from Stripe
-      // });
+        await updateSubscriptionStatus({
+          stripeSubscriptionId: eventData.id,
+          status: eventData.status,
+          subscriptionStartDate: eventData.current_period_start,
+          subscriptionEndDate: eventData.current_period_end,
+        });
 
-      console.log(
-        `✅ Database Updated: Subscription ${eventData.id}, Status: ${eventData.status}`
-      );
+        console.log(
+          `✅ Database Updated: Subscription ${eventData.id}, Status: ${eventData.status}`
+        );
+      } catch (err) {
+        console.error("❌ Failed to Update Subscription:", err.message);
+      }
       break;
 
-    // case "invoice.payment_succeeded":
-    //   console.log("📬 EVENT: invoice.payment_succeeded");
-    //   console.log(`💳 Payment Succeeded: ${eventData.id}`);
-    //   console.log(`🔗 Subscription: ${eventData.subscription}`);
-    //   console.log(`📄 Billing Reason: ${eventData.billing_reason}`);
-    //   // console.log("EVENT DATA: ", eventData);
-
-    //   if (eventData.billing_reason === "subscription_cycle") {
-    //     console.log("♻️ Recurring Payment Succeeded:", eventData.subscription);
-    //   } else if (eventData.billing_reason === "subscription_create") {
-    //     console.log(
-    //       "📦 Manual Subscription Payment Succeeded:",
-    //       eventData.subscription
-    //     );
-    //   }
-
-    //   break;
-
+    /*** HANDLE PAYMENT FAILURES ***/
     case "invoice.payment_failed":
-      console.error("❌ EVENT: invoice.payment_failed");
-      console.error(
-        `❌ Payment Failed for Subscription: ${eventData.subscription}`
-      );
-      console.error("❌ EVENT DATA:", eventData);
-      break;
+      try {
+        console.error("❌ EVENT: invoice.payment_failed");
+        console.error(
+          `❌ Payment Failed for Subscription: ${eventData.subscription}`
+        );
 
+        await updateSubscriptionStatus({
+          stripeSubscriptionId: eventData.subscription,
+          status: "past_due",
+        });
+
+        console.error("❌ Subscription Marked as Past Due in DB.");
+      } catch (err) {
+        console.error("❌ Failed to Update Payment Status:", err.message);
+      }
+      break;
+    /*** UNHANDLED EVENTS ***/
     default:
     // console.warn(`⚠️ Unhandled Event Type: ${type}`);
     // console.warn("⚠️ UNHANDLED EVENT DATA:", eventData);
