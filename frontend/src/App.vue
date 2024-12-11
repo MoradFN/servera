@@ -1,10 +1,19 @@
 <!-- MTTODO TRANSITION TEST, LÄGG DE NÅN ANNAN STANS. -->
+<script setup>
+import { RouterView, useRoute } from "vue-router";
+import Navbar from "@/components/Navbar.vue";
+import RestaurantNavbar from "@/components/RestaurantNavbar.vue";
 
+const route = useRoute();
+const isPublicPage = ["/", "/about", "/get-started", "/login", "/register"];
+const isRestaurantPage = route.params.slug !== undefined;
+</script>
 <template>
   <div id="app">
-    <transition name="fade" mode="out-in">
-      <router-view />
-    </transition>
+    <!-- <Navbar /> -->
+    <Navbar v-if="isPublicPage.includes(route.path)" />
+    <!-- <RestaurantNavbar v-else-if="isRestaurantPage" /> -->
+    <RouterView />
   </div>
 </template>
 
