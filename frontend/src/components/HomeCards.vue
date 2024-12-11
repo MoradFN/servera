@@ -29,7 +29,7 @@ const cards = [
     title: "Menu Management",
     description: "Easily manage menu items and promotions.",
     linkText: "Manage Now",
-    linkHref: "/admin",
+    linkHref: "/login",
     imageSrc: new URL(
       "@/assets/img/placeholder-menu-example-3.png",
       import.meta.url
