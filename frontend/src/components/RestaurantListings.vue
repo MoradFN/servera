@@ -1,40 +1,54 @@
+<script setup>
+import axios from "axios";
+import { ref, onMounted } from "vue";
+
+// State variables
+const restaurants = ref([]);
+const error = ref(null);
+
+// Fetch data
+const fetchSubscribedRestaurants = async () => {
+  try {
+    const response = await axios.get(
+      "http://localhost:8083/api/restaurants/subscribed"
+    );
+    if (response.data.success) {
+      restaurants.value = response.data.data;
+    } else {
+      error.value = "Failed to fetch restaurants.";
+    }
+  } catch (err) {
+    error.value = "Error fetching restaurants.";
+    console.error(err);
+  }
+};
+
+// Fetch data on component mount
+onMounted(() => {
+  fetchSubscribedRestaurants();
+});
+</script>
+
 <template>
   <div class="restaurant-list">
     <h1>Our Subscribed Restaurants</h1>
-    <ul>
+
+    <!-- Show restaurants -->
+    <ul v-if="restaurants.length">
       <li v-for="restaurant in restaurants" :key="restaurant.slug">
         <router-link :to="`/${restaurant.slug}`">
           {{ restaurant.restaurant_name }}
         </router-link>
       </li>
     </ul>
+
+    <!-- Show error -->
+    <p v-else-if="error">{{ error }}</p>
+
+    <!-- Show loading -->
+    <p v-else>Loading...</p>
   </div>
 </template>
-
-<script>
-export default {
-  data() {
-    return {
-      restaurants: [],
-    };
-  },
-  async created() {
-    try {
-      const response = await fetch(
-        "http://localhost:8083/api/restaurants/subscribed"
-      );
-      const data = await response.json();
-      if (data.success) {
-        this.restaurants = data.data;
-      } else {
-        console.error("Failed to fetch restaurants");
-      }
-    } catch (error) {
-      console.error("Error fetching restaurants:", error);
-    }
-  },
-};
-</script>
 
 <style scoped>
 .restaurant-list {
