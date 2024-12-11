@@ -1,6 +1,7 @@
 <script setup>
 import TheWelcome from "../components/TheWelcome.vue";
 import AppHero from "@/components/AppHero.vue";
+import HomeCards from "@/components/HomeCards.vue";
 </script>
 
 <template>
@@ -13,6 +14,7 @@ import AppHero from "@/components/AppHero.vue";
         { text: 'Läs mer', to: '/about' },
       ]"
     />
-    <TheWelcome />
+    <HomeCards />
+    <!-- <TheWelcome /> -->
   </main>
 </template>
