@@ -1,4 +1,5 @@
 <script setup>
+import RestaurantListing from "./RestaurantListing.vue";
 import axios from "axios";
 import { ref, onMounted } from "vue";
 
@@ -24,9 +25,7 @@ const fetchSubscribedRestaurants = async () => {
 };
 
 // Fetch data on component mount
-onMounted(() => {
-  fetchSubscribedRestaurants();
-});
+onMounted(fetchSubscribedRestaurants);
 </script>
 
 <template>
@@ -35,39 +34,15 @@ onMounted(() => {
       <h2 class="text-3xl font-bold text-blue-400 mb-6 text-center">
         Our Subscribed Restaurants
       </h2>
-      <!-- Show restaurants -->
-      <ul v-if="restaurants.length">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <li
-            class="text-center bg-white p-6 rounded-lg shadow-md"
-            v-for="restaurant in restaurants"
-            :key="restaurant.slug"
-          >
-            <router-link :to="`/${restaurant.slug}`">
-              {{ restaurant.restaurant_name }}
-            </router-link>
-          </li>
-        </div>
-      </ul>
 
-      <!-- Show error -->
-      <p v-else-if="error">{{ error }}</p>
-
-      <!-- Show loading -->
-      <p v-else>Loading...</p>
+      <RestaurantListing :restaurants="restaurants" :error="error" />
     </div>
   </section>
 </template>
 
 <style scoped>
-.restaurant-list {
-  padding: 1rem;
-}
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-li {
-  margin: 0.5rem 0;
+.container {
+  max-width: 1200px;
+  margin: auto;
 }
 </style>
