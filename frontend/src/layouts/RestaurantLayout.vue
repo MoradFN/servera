@@ -2,17 +2,20 @@
   <div class="restaurant-layout">
     <NavBar />
 
-    <!-- Main Content Area -->
     <main>
-      <!-- Dynamic Hero Section -->
       <section class="hero">
         <slot name="hero"></slot>
       </section>
 
-      <!-- Dynamic Content Area -->
       <section class="content">
         <slot />
       </section>
+
+      <!-- Reusable Modal -->
+      <AddMenuItemModal v-if="isModalVisible" @close="closeModal">
+        <h2>Add Menu Item</h2>
+        <p>Form for creating a new menu item goes here...</p>
+      </AddMenuItemModal>
     </main>
 
     <Footer />
@@ -22,11 +25,22 @@
 <script>
 import NavBar from "@/components/NavBar.vue";
 import Footer from "@/components/Footer.vue";
+import AddMenuItemModal from "@/components/AddMenuItemModal.vue";
 
 export default {
-  components: {
-    NavBar,
-    Footer,
+  components: { NavBar, Footer, AddMenuItemModal },
+  data() {
+    return {
+      isModalVisible: false,
+    };
+  },
+  methods: {
+    openModal() {
+      this.isModalVisible = true;
+    },
+    closeModal() {
+      this.isModalVisible = false;
+    },
   },
 };
 </script>
@@ -42,7 +56,7 @@ main {
   padding: 2rem;
 }
 .hero {
-  background: #f8f9fa;
+  background: lightblue;
   padding: 2rem;
   text-align: center;
 }

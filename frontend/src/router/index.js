@@ -31,7 +31,12 @@ const routes = [
   { path: "/get-started", name: "GetStarted", component: GetStarted },
   { path: "/login", name: "Login", component: Login },
   { path: "/register", name: "Register", component: Register },
-
+  // Temporary Test Route (Directly Access)
+  // {
+  //   path: "/test-menu",
+  //   name: "TestMenu",
+  //   component: RestaurantMenu, // Reuse the same page
+  // },
   // Restaurant Pages (Public-Facing)
   {
     path: "/:slug",
