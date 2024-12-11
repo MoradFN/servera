@@ -2,6 +2,7 @@
 import TheWelcome from "../components/TheWelcome.vue";
 import AppHero from "@/components/AppHero.vue";
 import HomeCards from "@/components/HomeCards.vue";
+import RestaurantListings from "@/components/RestaurantListings.vue";
 </script>
 
 <template>
@@ -15,6 +16,7 @@ import HomeCards from "@/components/HomeCards.vue";
       ]"
     />
     <HomeCards />
+    <RestaurantListings />
     <!-- <TheWelcome /> -->
   </main>
 </template>
