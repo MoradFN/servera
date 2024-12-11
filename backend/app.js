@@ -12,6 +12,8 @@ import authRoute from "./routes/authRoute.js";
 import restaurantRoute from "./routes/restaurantRoute.js";
 import subscriptionRoutes from "./routes/subscriptionRoutes.js";
 
+import webhookRoute from "./routes/webhookRoute.js";
+
 dotenv.config();
 //
 const app = express();
@@ -40,10 +42,11 @@ const corsOptions = {
 };
 
 // Middlewares
-app.use(express.json());
 app.use(cors(corsOptions)); // MTTODO: CORS middleware
 app.use(cookieParser());
 
+app.use("/api/webhooks", webhookRoute);
+app.use(express.json());
 // Routes
 app.use("/api/auth", authRoute);
 app.use("/api/restaurants", restaurantRoute);
