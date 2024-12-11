@@ -16,7 +16,7 @@ import RestaurantListings from "@/components/RestaurantListings.vue";
       ]"
     />
     <HomeCards />
-    <RestaurantListings />
+    <RestaurantListings :limit="4" :showButton="true" />
     <!-- <TheWelcome /> -->
   </main>
 </template>

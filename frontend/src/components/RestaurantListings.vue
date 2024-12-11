@@ -6,7 +6,17 @@ import { ref, onMounted } from "vue";
 // State variables
 const restaurants = ref([]);
 const error = ref(null);
-
+defineProps({
+  limit: Number,
+  showButton: {
+    type: Boolean,
+    default: false,
+  },
+  allRestaurantsHref: {
+    type: String,
+    default: "/restaurants",
+  },
+});
 // Fetch data
 const fetchSubscribedRestaurants = async () => {
   try {
@@ -35,8 +45,19 @@ onMounted(fetchSubscribedRestaurants);
         Our Subscribed Restaurants
       </h2>
 
-      <RestaurantListing :restaurants="restaurants" :error="error" />
+      <RestaurantListing
+        :restaurants="limit ? restaurants.slice(0, limit) : restaurants"
+        :error="error"
+      />
     </div>
+  </section>
+  <section v-if="showButton" class="m-auto max-w-lg my-10 px-6">
+    <router-link
+      :to="allRestaurantsHref"
+      class="block bg-black text-white text-center py-4 px-6 rounded-xl hover:bg-gray-700"
+    >
+      View All Restaurants
+    </router-link>
   </section>
 </template>
 
