@@ -1,7 +1,7 @@
 <script setup>
 import HomeCard from "./HomeCard.vue";
 
-// Sample Images (Replace with actual image paths)
+//MTTODO: Inspiration vid slug genererad sida. Kan ändra bild, färger, text, etc här baserat på db?.
 const cards = [
   {
     title: "Custom Menus",
@@ -12,7 +12,7 @@ const cards = [
       "@/assets/img/placeholder-menu-example-1.png",
       import.meta.url
     ).href,
-    bg: "bg-white",
+    bg: "bg-red-100",
   },
   {
     title: "Unique Themes",
