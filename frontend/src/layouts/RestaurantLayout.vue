@@ -23,7 +23,7 @@
 </template>
 
 <script>
-import NavBar from "@/components/NavBar.vue";
+import NavBar from "@/components/Navbar.vue";
 import Footer from "@/components/Footer.vue";
 import AddMenuItemModal from "@/components/AddMenuItemModal.vue";
 

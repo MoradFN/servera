@@ -143,3 +143,21 @@ export const checkRestaurantSoftTermination = async (id) => {
     throw new Error(`Error checking if restaurant is active: ${err.message}`);
   }
 };
+
+// Find all active subscribed restaurants för listing i frontend landing page för associated restaurants.
+// MTTODO: SE OM JAG SKA TITTA PÅ IS_ACTIVE I RESTAURANTS TABELLEN ELLER IFRPN SUBSCRIOPTIONS STATUS.
+// MTTODO: IMPLEMENT LATER: (PAGINATION.), (LÄG IN MER INFO I DATABASEN, ADRESS, TEL NUMMER M.M.)
+//MTTODO ERROR CHECK
+export const findActiveSubscribedRestaurants = async () => {
+  const query = `
+    SELECT
+      r.name AS restaurant_name,
+      r.slug
+    FROM restaurants r
+    INNER JOIN subscriptions s ON r.id = s.restaurant_id
+    WHERE s.status = 'active' AND r.is_active = TRUE
+  `;
+
+  const [results] = await pool.query(query);
+  return results;
+};
