@@ -152,7 +152,8 @@ export const findActiveSubscribedRestaurants = async () => {
   const query = `
     SELECT
       r.name AS restaurant_name,
-      r.slug
+      r.slug,
+      r.short_description
     FROM restaurants r
     INNER JOIN subscriptions s ON r.id = s.restaurant_id
     WHERE s.status = 'active' AND r.is_active = TRUE

@@ -29,6 +29,9 @@ defineProps({
           >
             {{ restaurant.restaurant_name }}
           </router-link>
+          <p class="text-gray-500 mt-2">
+            {{ restaurant.short_description }}
+          </p>
         </li>
       </div>
     </ul>
