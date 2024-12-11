@@ -6,8 +6,8 @@ import AppHero from "@/components/AppHero.vue";
 <template>
   <main>
     <AppHero
-      title="Test title"
-      subtitle="Test subtitle"
+      title="Home Prop Test title"
+      subtitle="Home Prop Test subtitle"
       :links="[
         { text: 'Kom igång', to: '/get-started' },
         { text: 'Läs mer', to: '/about' },
