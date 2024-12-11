@@ -30,24 +30,33 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="restaurant-list">
-    <h1>Our Subscribed Restaurants</h1>
+  <section class="bg-blue-50 px-4 py-10">
+    <div class="container-xl lg:container m-auto">
+      <h2 class="text-3xl font-bold text-blue-400 mb-6 text-center">
+        Our Subscribed Restaurants
+      </h2>
+      <!-- Show restaurants -->
+      <ul v-if="restaurants.length">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <li
+            class="text-center bg-white p-6 rounded-lg shadow-md"
+            v-for="restaurant in restaurants"
+            :key="restaurant.slug"
+          >
+            <router-link :to="`/${restaurant.slug}`">
+              {{ restaurant.restaurant_name }}
+            </router-link>
+          </li>
+        </div>
+      </ul>
 
-    <!-- Show restaurants -->
-    <ul v-if="restaurants.length">
-      <li v-for="restaurant in restaurants" :key="restaurant.slug">
-        <router-link :to="`/${restaurant.slug}`">
-          {{ restaurant.restaurant_name }}
-        </router-link>
-      </li>
-    </ul>
+      <!-- Show error -->
+      <p v-else-if="error">{{ error }}</p>
 
-    <!-- Show error -->
-    <p v-else-if="error">{{ error }}</p>
-
-    <!-- Show loading -->
-    <p v-else>Loading...</p>
-  </div>
+      <!-- Show loading -->
+      <p v-else>Loading...</p>
+    </div>
+  </section>
 </template>
 
 <style scoped>
