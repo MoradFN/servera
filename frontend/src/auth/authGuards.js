@@ -1,4 +1,4 @@
-import { useCookies } from "@vueuse/integrations/useCookies";
+// import { useCookies } from "@vueuse/integrations/useCookies";
 
 // Auth Guard: Checks if user is logged in
 export const requireAuth = (to, from, next) => {
