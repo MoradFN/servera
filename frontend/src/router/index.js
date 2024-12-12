@@ -28,7 +28,7 @@ import {
 
 // Mock Function to Check Slug Existence
 async function checkSlug(to, from, next) {
-  const validSlugs = ["italian-palace", "example-restaurant"]; // Example slugs
+  const validSlugs = ["italian-palace", "stripe-pizzeria", "test-pizzeria3"]; // Example slugs
 
   if (validSlugs.includes(to.params.slug)) {
     next(); // Proceed if slug exists
