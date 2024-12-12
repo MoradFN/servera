@@ -1,5 +1,5 @@
 <script setup>
-import { defineProps } from "vue";
+import { defineProps, ref } from "vue";
 
 defineProps({
   restaurants: {
@@ -11,6 +11,8 @@ defineProps({
     default: null,
   },
 });
+
+const showMore = ref({});
 </script>
 
 <template>
@@ -30,7 +32,27 @@ defineProps({
             {{ restaurant.restaurant_name }}
           </router-link>
           <p class="text-gray-500 mt-2">
-            {{ restaurant.short_description }}
+            <span v-if="showMore[restaurant.slug]">
+              {{ restaurant.short_description }}
+              <button
+                @click="showMore[restaurant.slug] = false"
+                class="text-blue-400 hover:text-blue-600"
+              >
+                Show Less
+              </button>
+            </span>
+            <span v-else>
+              {{ restaurant.short_description.slice(0, 100) }}
+              <span v-if="restaurant.short_description.length > 300">
+                ...
+                <button
+                  @click="showMore[restaurant.slug] = true"
+                  class="text-blue-400 hover:text-blue-600"
+                >
+                  Show More
+                </button>
+              </span>
+            </span>
           </p>
         </li>
       </div>
