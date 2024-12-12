@@ -12,7 +12,7 @@ const isPublicPage = [
   "/login",
   "/register",
   "/restaurants",
-  "/subcribe",
+  "/subscribe",
 ];
 const isRestaurantPage = route.params.slug !== undefined;
 </script>
