@@ -1,3 +1,7 @@
+<script setup>
+import { RouterLink } from "vue-router";
+</script>
+
 <template>
   <div class="not-found">
     <h1>404 - Page Not Found</h1>

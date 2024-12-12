@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
+// import NotFound from "@/views/NotFound.vue";
 
 // Public Pages
 import AppHomeView from "@/views/AppHomeView.vue";
@@ -25,7 +26,16 @@ import {
   requireOwner,
 } from "../auth/authGuards.js";
 
-// Define routes
+// Mock Function to Check Slug Existence
+async function checkSlug(to, from, next) {
+  const validSlugs = ["italian-palace", "example-restaurant"]; // Example slugs
+
+  if (validSlugs.includes(to.params.slug)) {
+    next(); // Proceed if slug exists
+  } else {
+    next({ name: "NotFound" }); // Redirect to 404
+  }
+} // Define routes
 const routes = [
   // Public Pages (App Homepage)
   { path: "/", name: "Home", component: AppHomeView },
@@ -39,6 +49,7 @@ const routes = [
     component: DisplayRestaurantsView,
   },
   { path: "/subscribe", name: "Subscribe", component: SubscribeView },
+
   // Temporary Test Route (Directly Access)
   // {
   //   path: "/test-menu",
@@ -47,8 +58,9 @@ const routes = [
   // },
   // Restaurant Pages (Public-Facing)
   {
-    path: "/:slug",
+    path: "/:slug([a-z0-9-]+)",
     component: RestaurantLayout, // Shared layout for restaurant pages
+    beforeEnter: checkSlug,
     children: [
       { path: "", name: "RestaurantHome", component: RestaurantHome },
       { path: "about", name: "RestaurantAbout", component: RestaurantAbout },

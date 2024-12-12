@@ -50,7 +50,7 @@ a.router-link-active {
 }
 a:hover {
   text-decoration: underline;
-  background-color: #283142;
+  background-color: #191e29;
   border-radius: 1rem 1rem;
 }
 </style>
