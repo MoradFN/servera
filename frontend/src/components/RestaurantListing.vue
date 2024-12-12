@@ -21,9 +21,13 @@ const showMore = ref({});
     <ul v-if="restaurants.length">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <li
-          class="text-center bg-white p-6 rounded-lg shadow-md"
+          class="text-center bg-white p-6 rounded-lg shadow-md transition-all duration-300"
           v-for="restaurant in restaurants"
           :key="restaurant.slug"
+          :class="{
+            'max-h-40 overflow-hidden': !showMore[restaurant.slug],
+            'max-h-auto': showMore[restaurant.slug],
+          }"
         >
           <router-link
             :to="`/${restaurant.slug}`"
