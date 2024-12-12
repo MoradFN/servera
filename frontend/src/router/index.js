@@ -38,7 +38,7 @@ const routes = [
     name: "DisplayRestaurants",
     component: DisplayRestaurantsView,
   },
-  { path: "/subcribe", name: "Subscribe", component: SubscribeView },
+  { path: "/subscribe", name: "Subscribe", component: SubscribeView },
   // Temporary Test Route (Directly Access)
   // {
   //   path: "/test-menu",

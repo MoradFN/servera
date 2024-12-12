@@ -1,1 +1,1 @@
-<template><h1>frontend\src\views\SubscribeView.vue</h1></template>
+<template><h1>frontend\src\views\Subscribe.vue</h1></template>
