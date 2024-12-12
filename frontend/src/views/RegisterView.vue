@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
@@ -11,6 +11,10 @@ const email = ref("");
 const password = ref("");
 const confirmPassword = ref("");
 const error = ref(null);
+
+const fullSlug = computed(() => {
+  return `www.servera.com/${slug.value}`;
+});
 
 const handleSubmit = async (e) => {
   e.preventDefault();
@@ -48,8 +52,11 @@ const handleSubmit = async (e) => {
 <template>
   <div class="registration-form">
     <form @submit="handleSubmit" class="form-container">
-      <label class="form-label">
-        Slug
+      <label class="form-label"
+        >Länk till din restaurang <br />
+        <!-- <p class="full-slug-prefix">Länk till din restaurang:</p> -->
+
+        <span class="full-slug">{{ fullSlug }}</span>
         <input type="text" v-model="slug" class="form-input" />
       </label>
       <label class="form-label">
@@ -111,6 +118,16 @@ const handleSubmit = async (e) => {
   margin-bottom: 1rem;
   border: 1px solid #ccc;
   border-radius: 4px;
+}
+
+.full-slug-prefix {
+  font-size: 0.8rem;
+  opacity: 0.5;
+}
+
+.full-slug {
+  font-size: 0.8rem;
+  font-weight: bold;
 }
 
 .submit-button {
