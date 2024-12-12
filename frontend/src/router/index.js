@@ -1,11 +1,11 @@
 import { createRouter, createWebHistory } from "vue-router";
 
 // Public Pages
-import AppHome from "@/views/AppHome.vue";
-import AppAbout from "@/views/AppAbout.vue";
-import GetStarted from "@/views/GetStarted.vue";
-import Login from "@/views/Login.vue";
-import Register from "@/views/Register.vue";
+import AppHomeView from "@/views/AppHomeView.vue";
+import AppAboutView from "@/views/AppAboutView.vue";
+import GetStartedView from "@/views/GetStartedView.vue";
+import LoginView from "@/views/LoginView.vue";
+import RegisterView from "@/views/RegisterView.vue";
 
 // Restaurant Pages
 import RestaurantLayout from "@/layouts/RestaurantLayout.vue";
@@ -26,11 +26,11 @@ import {
 // Define routes
 const routes = [
   // Public Pages (App Homepage)
-  { path: "/", name: "Home", component: AppHome },
-  { path: "/about", name: "About", component: AppAbout },
-  { path: "/get-started", name: "GetStarted", component: GetStarted },
-  { path: "/login", name: "Login", component: Login },
-  { path: "/register", name: "Register", component: Register },
+  { path: "/", name: "Home", component: AppHomeView },
+  { path: "/about", name: "About", component: AppAboutView },
+  { path: "/get-started", name: "GetStarted", component: GetStartedView },
+  { path: "/login", name: "Login", component: LoginView },
+  { path: "/register", name: "Register", component: RegisterView },
   // Temporary Test Route (Directly Access)
   // {
   //   path: "/test-menu",
