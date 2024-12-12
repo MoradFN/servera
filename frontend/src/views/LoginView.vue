@@ -1,1 +1,7 @@
-<template><h1>frontend\src\views\Login.vue</h1></template>
+<script setup>
+import Login from "@/components/Login.vue";
+</script>
+
+<template>
+  <Login />
+</template>
