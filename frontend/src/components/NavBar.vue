@@ -1,3 +1,8 @@
+<script setup>
+// Import logo image
+import logo from "../assets/img/logo.png";
+// import { RouterLink } from "vue-router";
+</script>
 <template>
   <nav class="navbar">
     <!-- Logo Image -->
@@ -11,11 +16,6 @@
   </nav>
 </template>
 
-<script setup>
-// Import logo image
-import logo from "../assets/img/logo.png";
-</script>
-
 <style scoped>
 .navbar {
   display: flex;
@@ -24,6 +24,7 @@ import logo from "../assets/img/logo.png";
   padding: 1rem;
   background: #2c3e50;
   color: white;
+  max-height: 70px;
 }
 
 .logo {
@@ -35,8 +36,12 @@ a {
   color: white;
   text-decoration: none;
   font-size: 1.2rem;
+  background: none;
+  padding: 1rem 1rem;
 }
 a:hover {
   text-decoration: underline;
+  background-color: #283142;
+  border-radius: 1rem 1rem;
 }
 </style>

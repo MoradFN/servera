@@ -6,6 +6,7 @@ import AppAboutView from "@/views/AppAboutView.vue";
 import GetStartedView from "@/views/GetStartedView.vue";
 import LoginView from "@/views/LoginView.vue";
 import RegisterView from "@/views/RegisterView.vue";
+import SubscribeView from "@/views/SubscribeView.vue";
 
 // Restaurant Pages
 import RestaurantLayout from "@/layouts/RestaurantLayout.vue";
@@ -37,6 +38,7 @@ const routes = [
     name: "DisplayRestaurants",
     component: DisplayRestaurantsView,
   },
+  { path: "/subcribe", name: "Subscribe", component: SubscribeView },
   // Temporary Test Route (Directly Access)
   // {
   //   path: "/test-menu",

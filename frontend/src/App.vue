@@ -5,7 +5,15 @@ import Navbar from "@/components/Navbar.vue";
 import RestaurantNavbar from "@/components/RestaurantNavbar.vue";
 
 const route = useRoute();
-const isPublicPage = ["/", "/about", "/get-started", "/login", "/register"];
+const isPublicPage = [
+  "/",
+  "/about",
+  "/get-started",
+  "/login",
+  "/register",
+  "/restaurants",
+  "/subcribe",
+];
 const isRestaurantPage = route.params.slug !== undefined;
 </script>
 <template>
