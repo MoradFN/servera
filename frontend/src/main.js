@@ -1,14 +1,26 @@
-import './assets/main.css'
+// Vue Core
+import { createApp } from "vue";
+import { createPinia } from "pinia";
 
-import { createApp } from 'vue'
-import { createPinia } from 'pinia'
+// Main App
+import App from "./App.vue";
 
-import App from './App.vue'
-import router from './router'
+// Router
+import router from "./router";
 
-const app = createApp(App)
+// Global CSS & Plugins
+import "./assets/main.css";
+import "primeicons/primeicons.css";
+import Toast from "vue-toastification";
+import "vue-toastification/dist/index.css";
 
-app.use(createPinia())
-app.use(router)
+// Create Vue App
+const app = createApp(App);
 
-app.mount('#app')
+// Use Plugins
+app.use(createPinia());
+app.use(router);
+app.use(Toast);
+
+// Mount App
+app.mount("#app");
