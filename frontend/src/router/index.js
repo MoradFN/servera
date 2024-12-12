@@ -12,6 +12,7 @@ import RestaurantLayout from "@/layouts/RestaurantLayout.vue";
 import RestaurantHome from "@/views/restaurant/RestaurantHome.vue";
 import RestaurantAbout from "@/views/restaurant/RestaurantAbout.vue";
 import RestaurantMenu from "@/views/restaurant/RestaurantMenu.vue";
+import DisplayRestaurantsView from "@/views/DisplayRestaurantsView.vue";
 
 // Owner Editable Page
 import EditPageWrapper from "@/views/admin/EditPageWrapper.vue";
@@ -31,6 +32,11 @@ const routes = [
   { path: "/get-started", name: "GetStarted", component: GetStartedView },
   { path: "/login", name: "Login", component: LoginView },
   { path: "/register", name: "Register", component: RegisterView },
+  {
+    path: "/restaurants",
+    name: "DisplayRestaurants",
+    component: DisplayRestaurantsView,
+  },
   // Temporary Test Route (Directly Access)
   // {
   //   path: "/test-menu",
