@@ -1,7 +1,12 @@
 <script setup>
 // Import logo image
 import logo from "../assets/img/logo.png";
-// import { RouterLink } from "vue-router";
+import { RouterLink, useRoute } from "vue-router";
+
+const isActiveLink = (routePath) => {
+  const route = useRoute();
+  return route.path === routePath;
+};
 </script>
 <template>
   <nav class="navbar">
@@ -38,6 +43,10 @@ a {
   font-size: 1.2rem;
   background: none;
   padding: 1rem 1rem;
+}
+a.router-link-active {
+  background-color: #283142;
+  border-radius: 1rem 1rem;
 }
 a:hover {
   text-decoration: underline;
