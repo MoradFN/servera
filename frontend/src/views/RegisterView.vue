@@ -1,50 +1,43 @@
 <script setup>
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
+import axios from "axios";
 
 const router = useRouter();
 const slug = ref("");
 const restaurantName = ref("");
-const firstName = ref("");
-const lastName = ref("");
 const email = ref("");
 const password = ref("");
 const confirmPassword = ref("");
 const error = ref(null);
 
 const fullSlug = computed(() => {
-  return `www.servera.com/${slug.value}`;
+  return `www.servera.com/${slug.value.toLowerCase()}`;
 });
 
 const handleSubmit = async (e) => {
   e.preventDefault();
 
   try {
-    const response = await fetch("/api/register", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    const response = await axios.post(
+      "http://localhost:8083/api/auth/register",
+      {
         slug: slug.value,
-        restaurantName: restaurantName.value,
-        firstName: firstName.value,
-        lastName: lastName.value,
+        name: restaurantName.value, // Match the correct field name
         email: email.value,
         password: password.value,
-        confirmPassword: confirmPassword.value,
-      }),
-    });
+        confirmPassword: confirmPassword.value, // Optional, depending on your backend
+      }
+    );
 
-    if (!response.ok) {
+    if (response.status === 200) {
+      router.push("/login");
+    } else {
       error.value = "Something went wrong";
-      return;
     }
-
-    router.push("/login");
-  } catch (error) {
-    console.error(error);
-    error.value = "Something went wrong";
+  } catch (err) {
+    console.error(err);
+    error.value = "An error occurred during registration.";
   }
 };
 </script>
@@ -52,24 +45,15 @@ const handleSubmit = async (e) => {
 <template>
   <div class="registration-form">
     <form @submit="handleSubmit" class="form-container">
-      <label class="form-label"
-        >Länk till din restaurang <br />
-        <!-- <p class="full-slug-prefix">Länk till din restaurang:</p> -->
-
+      <label class="form-label">
+        Registrera Subdomän:<br />
+        <p class="full-slug-prefix">Länk till din restaurang:</p>
         <span class="full-slug">{{ fullSlug }}</span>
         <input type="text" v-model="slug" class="form-input" />
       </label>
       <label class="form-label">
         Namn på din restaurang
         <input type="text" v-model="restaurantName" class="form-input" />
-      </label>
-      <label class="form-label">
-        Förnamn
-        <input type="text" v-model="firstName" class="form-input" />
-      </label>
-      <label class="form-label">
-        Efternamn
-        <input type="text" v-model="lastName" class="form-input" />
       </label>
       <label class="form-label">
         Mail address

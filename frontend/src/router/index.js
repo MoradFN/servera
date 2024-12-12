@@ -8,6 +8,7 @@ import GetStartedView from "@/views/GetStartedView.vue";
 import LoginView from "@/views/LoginView.vue";
 import RegisterView from "@/views/RegisterView.vue";
 import SubscribeView from "@/views/SubscribeView.vue";
+import TestView from "@/views/TestView.vue";
 
 // Restaurant Pages
 import RestaurantLayout from "@/layouts/RestaurantLayout.vue";
@@ -51,11 +52,11 @@ const routes = [
   { path: "/subscribe", name: "Subscribe", component: SubscribeView },
 
   // Temporary Test Route (Directly Access)
-  // {
-  //   path: "/test-menu",
-  //   name: "TestMenu",
-  //   component: RestaurantMenu, // Reuse the same page
-  // },
+  {
+    path: "/test",
+    name: "Test",
+    component: TestView, // Reuse the same page
+  },
   // Restaurant Pages (Public-Facing)
   {
     path: "/:slug([a-z0-9-]+)",
