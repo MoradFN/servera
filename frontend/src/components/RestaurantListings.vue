@@ -56,7 +56,7 @@ onMounted(fetchSubscribedRestaurants);
       :to="allRestaurantsHref"
       class="block bg-black text-white text-center py-4 px-6 rounded-xl hover:bg-gray-700"
     >
-      View All Restaurants
+      Visa Alla Restauranger
     </router-link>
   </section>
 </template>

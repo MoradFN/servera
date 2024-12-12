@@ -20,6 +20,8 @@ const showMore = ref({});
     <!-- Show restaurants -->
     <ul v-if="restaurants.length">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Show each restaurant -->
+        <!-- Style xpanderar en(fix). -->
         <li
           class="text-center bg-white p-6 rounded-lg shadow-md transition-all duration-300"
           v-for="restaurant in restaurants"
