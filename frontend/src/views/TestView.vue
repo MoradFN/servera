@@ -1,74 +1,72 @@
 <template>
   <div>
     <h2>Subscribe</h2>
-    <form @submit.prevent="subscribe">
-      <div>
-        <label>Plan ID:</label>
-        <input :value="fixedPlanId" type="text" readonly />
+    <form @submit.prevent="createSubscription">
+      <div id="card-element">
+        <!-- Stripe Card Element will be mounted here -->
       </div>
-
-      <div>
-        <label>Payment Method ID (optional if default card exists):</label>
-        <input
-          v-model="paymentMethodId"
-          type="text"
-          placeholder="Enter Payment Method ID"
-        />
-      </div>
-
       <button type="submit">Subscribe</button>
     </form>
-
-    <div v-if="errorMessage" class="error">{{ errorMessage }}</div>
-    <div v-if="successMessage" class="success">{{ successMessage }}</div>
   </div>
 </template>
 
 <script setup>
-import { ref } from "vue";
-import axios from "axios";
+import { onMounted, ref } from "vue";
+import { loadStripe } from "@stripe/stripe-js";
 
-const fixedPlanId = "price_1QSqYXGAJFpbqKlxqX1I7Qud"; // given plan ID
+const stripeInstance = ref(null);
+const elements = ref(null);
+let cardElement = null;
 
-// We'll still keep planId as a ref in case we need it for logic, but it's set to fixedPlanId
-const planId = ref(fixedPlanId);
-const paymentMethodId = ref("");
-const errorMessage = ref(null);
-const successMessage = ref(null);
+onMounted(async () => {
+  stripeInstance.value = await loadStripe(
+    import.meta.env.VITE_STRIPE_PUBLIC_KEY
+  );
+  elements.value = stripeInstance.value.elements();
+  cardElement = elements.value.create("card", {
+    style: { base: { fontSize: "16px" } },
+  });
+  cardElement.mount("#card-element");
+});
 
-async function subscribe() {
-  errorMessage.value = null;
-  successMessage.value = null;
+async function createSubscription() {
+  // Create a PaymentMethod from the card element
+  const { paymentMethod, error } =
+    await stripeInstance.value.createPaymentMethod({
+      type: "card",
+      card: cardElement,
+      billing_details: {
+        // optionally include billing details like name, email, etc.
+      },
+    });
 
+  if (error) {
+    console.error("Error creating payment method:", error);
+    return;
+  }
+
+  // Send the paymentMethod.id and the planId to your backend
   try {
-    const response = await axios.post(
+    const response = await fetch(
       "http://localhost:8083/api/subscriptions/subscribe",
       {
-        planId: planId.value,
-        paymentMethodId: paymentMethodId.value || undefined,
-      },
-      {
-        withCredentials: true,
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include", // so authToken cookie is sent
+        body: JSON.stringify({
+          planId: "price_1QSqYXGAJFpbqKlxqX1I7Qud", // your plan ID
+          paymentMethodId: paymentMethod.id,
+        }),
       }
     );
-
-    successMessage.value = response.data.message; // "Subscription created successfully"
-    console.log("Subscription details:", response.data.data);
+    const result = await response.json();
+    if (result.success) {
+      console.log("Subscription created successfully:", result.data);
+    } else {
+      console.error("Failed to create subscription:", result.message);
+    }
   } catch (err) {
-    console.error(err);
-    errorMessage.value =
-      err.response?.data?.message || "Failed to create subscription.";
+    console.error("Error calling backend:", err);
   }
 }
 </script>
-
-<style scoped>
-.error {
-  color: red;
-  margin-top: 10px;
-}
-.success {
-  color: green;
-  margin-top: 10px;
-}
-</style>
