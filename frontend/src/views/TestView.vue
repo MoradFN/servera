@@ -1,25 +1,26 @@
 <template>
   <div>
-    <h2>Create Test Stripe Customer</h2>
-    <form @submit.prevent="createCustomer">
-      <div class="form-group">
-        <label for="email">Email:</label>
-        <input id="email" v-model="email" type="email" required />
+    <h2>Subscribe</h2>
+    <form @submit.prevent="subscribe">
+      <div>
+        <label>Plan ID:</label>
+        <input :value="fixedPlanId" type="text" readonly />
       </div>
-      <div class="form-group">
-        <label for="name">Name:</label>
-        <input id="name" v-model="name" type="text" required />
+
+      <div>
+        <label>Payment Method ID (optional if default card exists):</label>
+        <input
+          v-model="paymentMethodId"
+          type="text"
+          placeholder="Enter Payment Method ID"
+        />
       </div>
-      <button type="submit">Create Customer</button>
+
+      <button type="submit">Subscribe</button>
     </form>
 
     <div v-if="errorMessage" class="error">{{ errorMessage }}</div>
-    <div v-if="customer">
-      <h3>Customer Created:</h3>
-      <p>ID: {{ customer.id }}</p>
-      <p>Email: {{ customer.email }}</p>
-      <p>Name: {{ customer.name }}</p>
-    </div>
+    <div v-if="successMessage" class="success">{{ successMessage }}</div>
   </div>
 </template>
 
@@ -27,36 +28,47 @@
 import { ref } from "vue";
 import axios from "axios";
 
-const email = ref("");
-const name = ref("");
-const customer = ref(null);
-const errorMessage = ref(null);
+const fixedPlanId = "price_1QSqYXGAJFpbqKlxqX1I7Qud"; // given plan ID
 
-const createCustomer = async () => {
+// We'll still keep planId as a ref in case we need it for logic, but it's set to fixedPlanId
+const planId = ref(fixedPlanId);
+const paymentMethodId = ref("");
+const errorMessage = ref(null);
+const successMessage = ref(null);
+
+async function subscribe() {
   errorMessage.value = null;
+  successMessage.value = null;
+
   try {
     const response = await axios.post(
-      "http://localhost:8083/api/test/create-customer",
+      "http://localhost:8083/api/subscriptions/subscribe",
       {
-        email: email.value,
-        name: name.value,
+        planId: planId.value,
+        paymentMethodId: paymentMethodId.value || undefined,
       },
       {
         withCredentials: true,
       }
     );
-    customer.value = response.data.customer;
+
+    successMessage.value = response.data.message; // "Subscription created successfully"
+    console.log("Subscription details:", response.data.data);
   } catch (err) {
     console.error(err);
     errorMessage.value =
-      err.response?.data?.message || "Failed to create customer.";
+      err.response?.data?.message || "Failed to create subscription.";
   }
-};
+}
 </script>
 
 <style scoped>
 .error {
   color: red;
+  margin-top: 10px;
+}
+.success {
+  color: green;
   margin-top: 10px;
 }
 </style>

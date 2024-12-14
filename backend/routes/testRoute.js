@@ -167,7 +167,7 @@ router.get("/stripe", async (req, res) => {
 });
 
 // Create a test customer route
-router.post("/create-customer", async (req, res) => {
+router.post("/create-customer", verifyJWT, async (req, res) => {
   try {
     const { email, name } = req.body;
     const customer = await stripe.customers.create({
