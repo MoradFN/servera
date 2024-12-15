@@ -1,9 +1,9 @@
 <template>
-  <div>
-    <h2>Subscribe</h2>
+  <div class="subscription-form">
+    <h2 class="form-title">Subscribe</h2>
 
-    <!-- Display fetched restaurant/user data -->
-    <div v-if="restaurantData">
+    <!-- Displayar innloggad restaurang data från eget api. -->
+    <div v-if="restaurantData" class="restaurant-info">
       <p>
         <strong>{{ restaurantData.name || "Name unavailable" }}</strong>
       </p>
@@ -11,15 +11,16 @@
       <p>Restaurant Slug: {{ restaurantData.slug || "Slug unavailable" }}</p>
     </div>
 
-    <form @submit.prevent="createSubscription">
-      <div id="card-element">
-        <!-- Stripe Card Element will be mounted here -->
+    <form @submit.prevent="createSubscription" class="form-container">
+      <div id="card-element" class="card-element-placeholder">
+        <!-- Stripe Card Element kommer att bli mountat HÄR! -->
       </div>
 
-      <button type="submit" :disabled="isLoading">
+      <button type="submit" class="submit-button" :disabled="isLoading">
         {{ isLoading ? "Processing..." : "Subscribe" }}
       </button>
     </form>
+
     <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
   </div>
 </template>
@@ -112,4 +113,70 @@ async function createSubscription() {
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+.subscription-form {
+  max-width: 500px;
+  margin: auto;
+  padding: 2rem;
+  background: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.form-title {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+  color: #2c3e50;
+}
+
+.restaurant-info {
+  background: #e8f4fc;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1.5rem;
+  font-size: 1rem;
+  text-align: left;
+}
+
+.form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.card-element-placeholder {
+  border: 1px solid #ccc;
+  padding: 1rem;
+  border-radius: 4px;
+  background: white;
+}
+
+.submit-button {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  color: white;
+  background: #007bff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.submit-button:hover {
+  background: #0056b3;
+}
+
+.submit-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: red;
+  margin-top: 1rem;
+  font-weight: bold;
+}
+</style>
