@@ -1,21 +1,12 @@
 <template>
-  <div class="subscription-form">
-    <h2>Subscribe to Our Plan</h2>
-    <form @submit.prevent="redirect">
-      <div class="form-group">
-        <label>Plan:</label>
-        <div class="plan-info">Basic Plan - $10/month</div>
+  <div>
+    <h2>Subscribe</h2>
+    <form @submit.prevent="createSubscription">
+      <div id="card-element">
+        <!-- Stripe Card Element will be mounted here -->
       </div>
-
-      <div class="form-group">
-        <label>Card Details:</label>
-        <div class="card-element-placeholder">[Card input goes here]</div>
-      </div>
-
       <button type="submit">Subscribe</button>
     </form>
-    <div v-if="errorMessage" class="error">{{ errorMessage }}</div>
-    <div v-if="successMessage" class="success">{{ successMessage }}</div>
   </div>
 </template>
 
@@ -23,119 +14,59 @@
 import { onMounted, ref } from "vue";
 import { loadStripe } from "@stripe/stripe-js";
 
-const stripe = ref(null);
-const errorMessage = ref(null);
-const successMessage = ref(null);
-
-// Replace this with a real Checkout Session ID from your backend.
-const TEST_CHECKOUT_SESSION_ID = "cs_test_xxx1234567890";
+const stripeInstance = ref(null);
+const elements = ref(null);
+let cardElement = null;
 
 onMounted(async () => {
-  try {
-    const stripeInstance = await loadStripe(
-      import.meta.env.VITE_STRIPE_PUBLIC_KEY
-    );
-    if (!stripeInstance) {
-      throw new Error("Failed to load Stripe");
-    }
-    stripe.value = stripeInstance;
-    successMessage.value = "Stripe has been initialized successfully!";
-  } catch (err) {
-    console.error("Error loading Stripe:", err);
-    errorMessage.value =
-      "An error occurred while initializing Stripe. Please try again later.";
-  }
+  stripeInstance.value = await loadStripe(
+    import.meta.env.VITE_STRIPE_PUBLIC_KEY
+  );
+  elements.value = stripeInstance.value.elements();
+  cardElement = elements.value.create("card", {
+    style: { base: { fontSize: "16px" } },
+  });
+  cardElement.mount("#card-element");
 });
 
-async function redirect() {
-  if (!stripe.value) {
-    errorMessage.value = "Stripe not initialized.";
+async function createSubscription() {
+  // Create a PaymentMethod from the card element
+  const { paymentMethod, error } =
+    await stripeInstance.value.createPaymentMethod({
+      type: "card",
+      card: cardElement,
+      billing_details: {
+        // optionally include billing details like name, email, etc.
+      },
+    });
+
+  if (error) {
+    console.error("Error creating payment method:", error);
     return;
   }
 
-  // Use an actual session ID obtained from your backend after creating a Checkout Session.
-  const { error } = await stripe.value.redirectToCheckout({
-    sessionId: TEST_CHECKOUT_SESSION_ID,
-  });
-
-  if (error) {
-    errorMessage.value = error.message;
+  // Send the paymentMethod.id and the planId to your backend
+  try {
+    const response = await fetch(
+      "http://localhost:8083/api/subscriptions/subscribe",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include", // so authToken cookie is sent
+        body: JSON.stringify({
+          planId: "price_1QSqYXGAJFpbqKlxqX1I7Qud", // your plan ID
+          paymentMethodId: paymentMethod.id,
+        }),
+      }
+    );
+    const result = await response.json();
+    if (result.success) {
+      console.log("Subscription created successfully:", result.data);
+    } else {
+      console.error("Failed to create subscription:", result.message);
+    }
+  } catch (err) {
+    console.error("Error calling backend:", err);
   }
 }
 </script>
-
-<style scoped>
-.subscription-form {
-  max-width: 400px;
-  margin: 40px auto;
-  font-family: Arial, sans-serif;
-}
-
-.subscription-form h2 {
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  font-weight: bold;
-  margin-bottom: 8px;
-}
-
-.plan-info,
-.card-element-placeholder,
-button {
-  width: 100%;
-  padding: 10px;
-  box-sizing: border-box;
-}
-
-.plan-info {
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background: #f5f5f5;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.card-element-placeholder {
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  height: 40px;
-  background: #f9f9f9;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #999;
-  font-size: 14px;
-}
-
-button {
-  background: #0070f3;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 16px;
-}
-
-button:hover {
-  background: #005bb5;
-}
-
-.error {
-  color: red;
-  margin-top: 10px;
-}
-
-.success {
-  color: green;
-  margin-top: 10px;
-}
-</style>
