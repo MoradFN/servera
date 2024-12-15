@@ -148,4 +148,41 @@ router.post("/detachPaymentMethod", async (req, res) => {
   }
 });
 
+router.get("/stripe", async (req, res) => {
+  try {
+    // Make a simple call to list products
+    const products = await stripe.products.list({ limit: 1 });
+    res.json({
+      success: true,
+      data: products.data,
+    });
+  } catch (error) {
+    console.error("Error connecting to Stripe:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to connect to Stripe",
+      error: error.message,
+    });
+  }
+});
+
+// Create a test customer route
+router.post("/create-customer", async (req, res) => {
+  try {
+    const { email, name } = req.body;
+    const customer = await stripe.customers.create({
+      email,
+      name,
+    });
+    res.json({ success: true, customer });
+  } catch (error) {
+    console.error("Error creating customer:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error creating customer",
+      error: error.message,
+    });
+  }
+});
+
 export default router;

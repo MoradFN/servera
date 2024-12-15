@@ -1,1 +1,7 @@
-<template><h1>frontend\src\views\Subscribe.vue</h1></template>
+<script setup>
+import StripeSubscribe from "@/components/stripeSubscribe.vue";
+</script>
+
+<template>
+  <StripeSubscribe />
+</template>

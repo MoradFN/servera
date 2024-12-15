@@ -14,14 +14,20 @@ const handleSubmit = async (e) => {
   e.preventDefault();
 
   try {
-    const response = await axios.post("http://localhost:8083/api/auth/login", {
-      email: email.value,
-      password: password.value,
-    });
+    const response = await axios.post(
+      "http://localhost:8083/api/auth/login",
+      {
+        email: email.value,
+        password: password.value,
+      },
+      {
+        withCredentials: true,
+      }
+    );
 
     if (response.status === 200) {
       toast.success("Login successful");
-      router.push("/");
+      router.push("/"); //MTTODO: Redirect to SLUG after login?
     } else {
       toast.error("Something went wrong");
       error.value = "Something went wrong";
@@ -35,7 +41,7 @@ const handleSubmit = async (e) => {
 </script>
 
 <template>
-  <div class="registration-form">
+  <div class="login-form">
     <form @submit="handleSubmit" class="form-container">
       <label class="form-label">
         E-post
@@ -52,7 +58,7 @@ const handleSubmit = async (e) => {
 </template>
 
 <style scoped>
-.registration-form {
+.login-form {
   max-width: 400px;
   margin: auto;
   padding: 1rem;

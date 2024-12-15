@@ -1,39 +1,72 @@
 <template>
-  <div class="register-form">
-    <h1>Register</h1>
-    <form @submit.prevent="submitUser">
-      <label for="name">Name</label>
-      <input type="text" id="name" v-model="user.name" /><br />
-      <label for="slug">Slug</label>
-      <input type="text" id="slug" v-model="user.slug" /><br />
-      <label for="email">Email</label>
-      <input type="email" id="email" v-model="user.email" /><br />
-      <label for="password">Password</label>
-      <input type="password" id="password" v-model="user.password" /><br />
-      <button type="submit">Submit</button>
+  <div>
+    <h2>Subscribe</h2>
+    <form @submit.prevent="createSubscription">
+      <div id="card-element">
+        <!-- Stripe Card Element will be mounted here -->
+      </div>
+      <button type="submit">Subscribe</button>
     </form>
   </div>
 </template>
 
 <script setup>
-import { ref } from "vue";
-import axios from "axios";
+import { onMounted, ref } from "vue";
+import { loadStripe } from "@stripe/stripe-js";
 
-const user = ref({
-  name: "Test-hasdasdardcoded",
-  slug: "hardcasdasdodeslug",
-  email: "hardcoasdasdded@restaurant.se",
-  password: "12345678",
+const stripeInstance = ref(null);
+const elements = ref(null);
+let cardElement = null;
+
+onMounted(async () => {
+  stripeInstance.value = await loadStripe(
+    import.meta.env.VITE_STRIPE_PUBLIC_KEY
+  );
+  elements.value = stripeInstance.value.elements();
+  cardElement = elements.value.create("card", {
+    style: { base: { fontSize: "16px" } },
+  });
+  cardElement.mount("#card-element");
 });
 
-function submitUser() {
-  axios
-    .post("http://localhost:8083/api/auth/register", user.value)
-    .then((response) => {
-      console.log(response);
-    })
-    .catch((error) => {
-      console.log(error);
+async function createSubscription() {
+  // Create a PaymentMethod from the card element
+  const { paymentMethod, error } =
+    await stripeInstance.value.createPaymentMethod({
+      type: "card",
+      card: cardElement,
+      billing_details: {
+        // optionally include billing details like name, email, etc.
+      },
     });
+
+  if (error) {
+    console.error("Error creating payment method:", error);
+    return;
+  }
+
+  // Send the paymentMethod.id and the planId to your backend
+  try {
+    const response = await fetch(
+      "http://localhost:8083/api/subscriptions/subscribe",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include", // so authToken cookie is sent
+        body: JSON.stringify({
+          planId: "price_1QSqYXGAJFpbqKlxqX1I7Qud", // your plan ID
+          paymentMethodId: paymentMethod.id,
+        }),
+      }
+    );
+    const result = await response.json();
+    if (result.success) {
+      console.log("Subscription created successfully:", result.data);
+    } else {
+      console.error("Failed to create subscription:", result.message);
+    }
+  } catch (err) {
+    console.error("Error calling backend:", err);
+  }
 }
 </script>
