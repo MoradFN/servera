@@ -5,18 +5,22 @@
     <!-- Display fetched restaurant/user data -->
     <div v-if="restaurantData">
       <p>
-        <strong>{{ restaurantData.name }}</strong>
+        <strong>{{ restaurantData.name || "Name unavailable" }}</strong>
       </p>
-      <p>{{ restaurantData.email }}</p>
-      <p>Restaurant Slug: {{ restaurantData.slug }}</p>
+      <p>{{ restaurantData.email || "Email unavailable" }}</p>
+      <p>Restaurant Slug: {{ restaurantData.slug || "Slug unavailable" }}</p>
     </div>
 
     <form @submit.prevent="createSubscription">
       <div id="card-element">
         <!-- Stripe Card Element will be mounted here -->
       </div>
-      <button type="submit">Subscribe</button>
+
+      <button type="submit" :disabled="isLoading">
+        {{ isLoading ? "Processing..." : "Subscribe" }}
+      </button>
     </form>
+    <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
   </div>
 </template>
 
@@ -28,83 +32,90 @@ const stripeInstance = ref(null);
 const elements = ref(null);
 let cardElement = null;
 
-const restaurantData = ref(null); // To store fetched restaurant/user data
+const restaurantData = ref(null); // Store restaurant/user data
+const isLoading = ref(false); // Loading state for form submission
+const errorMessage = ref(""); // Display specific error messages
 
 onMounted(async () => {
-  // Fetch the restaurant (user) data
   try {
+    // Fetch the restaurant (user) data
     const res = await fetch(
       "http://localhost:8083/api/restaurants/restaurantdata",
       {
-        credentials: "include", // ensures authToken cookie is sent
+        credentials: "include", // Ensure authToken cookie is sent
       }
     );
     const result = await res.json();
+
     if (result.success) {
       restaurantData.value = result.data;
     } else {
-      console.error("Failed to fetch user data:", result.message);
+      errorMessage.value = "Failed to fetch user data.";
     }
-  } catch (err) {
-    console.error("Error fetching user data:", err);
-  }
 
-  // Initialize Stripe
-  stripeInstance.value = await loadStripe(
-    import.meta.env.VITE_STRIPE_PUBLIC_KEY
-  );
-  elements.value = stripeInstance.value.elements();
-  cardElement = elements.value.create("card", {
-    style: { base: { fontSize: "16px" } },
-  });
-  cardElement.mount("#card-element");
+    // Initialize Stripe
+    stripeInstance.value = await loadStripe(
+      import.meta.env.VITE_STRIPE_PUBLIC_KEY
+    );
+    elements.value = stripeInstance.value.elements();
+    cardElement = elements.value.create("card", {
+      style: { base: { fontSize: "16px" } },
+    });
+    cardElement.mount("#card-element");
+  } catch (err) {
+    errorMessage.value = "An error occurred while loading data.";
+    console.error("Error:", err);
+  }
 });
 
 async function createSubscription() {
-  // Create a PaymentMethod from the card element
-  const { paymentMethod, error } =
-    await stripeInstance.value.createPaymentMethod({
-      type: "card",
-      card: cardElement,
-      billing_details: {
-        // Optionally include billing details here, for example from restaurantData:
-        // MTTODO: CHECK IT OUT.
-        name: restaurantData.value ? restaurantData.value.name : undefined,
-        email: restaurantData.value ? restaurantData.value.email : undefined,
-      },
-    });
+  isLoading.value = true; // Start loading
+  errorMessage.value = ""; // Clear previous error
 
-  if (error) {
-    console.error("Error creating payment method:", error);
-    return;
-  }
-
-  // Send the paymentMethod.id and the planId to your backend
   try {
+    // Create a PaymentMethod from the card element
+    const { paymentMethod, error } =
+      await stripeInstance.value.createPaymentMethod({
+        type: "card",
+        card: cardElement,
+      });
+
+    if (error) {
+      throw new Error("Payment method creation failed.");
+    }
+
+    // Send the paymentMethod.id and the planId to the backend
     const response = await fetch(
       "http://localhost:8083/api/subscriptions/subscribe",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include", // so authToken cookie is sent
+        credentials: "include", // Ensure authToken cookie is sent
         body: JSON.stringify({
-          planId: "price_1QSqYXGAJFpbqKlxqX1I7Qud", // your plan ID
+          planId: "price_1QSqYXGAJFpbqKlxqX1I7Qud", // Your plan ID
           paymentMethodId: paymentMethod.id,
         }),
       }
     );
     const result = await response.json();
+
     if (result.success) {
-      console.log("Subscription created successfully:", result.data);
+      alert("Subscription created successfully!");
     } else {
-      console.error("Failed to create subscription:", result.message);
+      throw new Error(result.message || "Subscription failed.");
     }
   } catch (err) {
-    console.error("Error calling backend:", err);
+    errorMessage.value = err.message || "An error occurred while subscribing.";
+    console.error("Subscription Error:", err);
+  } finally {
+    isLoading.value = false; // End loading
   }
 }
 </script>
 
 <style scoped>
-/* Add some basic styling if needed */
+.error-message {
+  color: red;
+  margin-top: 1rem;
+}
 </style>
