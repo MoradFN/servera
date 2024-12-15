@@ -14,7 +14,6 @@ router.get("/restaurantdata", verifyJWT, async (req, res, next) => {
     const restaurant = await findRestaurantById(req.user.id);
 
     const userData = {
-      id: restaurant.id,
       name: restaurant.name,
       email: restaurant.email,
       slug: restaurant.slug,
