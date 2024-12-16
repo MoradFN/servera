@@ -1,14 +1,27 @@
-// import { useCookies } from "@vueuse/integrations/useCookies";
+import jwtDecode from "jwt-decode";
+import { useCookies } from "@vueuse/integrations/useCookies";
 
-// Auth Guard: Checks if user is logged in
 export const requireAuth = (to, from, next) => {
   const cookies = useCookies();
-  const jwtToken = cookies.get("jwt");
+  const jwtToken = cookies.get("authToken");
 
   if (!jwtToken) {
-    next("/login"); // Redirect if not logged in
+    next("/login");
   } else {
-    next(); // Proceed if authenticated
+    try {
+      const decodedToken = jwtDecode(jwtToken);
+      const currentTime = Date.now() / 1000;
+
+      if (decodedToken.exp && decodedToken.exp < currentTime) {
+        cookies.remove("authToken"); // Remove expired token
+        next("/login");
+      } else {
+        next(); // Proceed if token is valid
+      }
+    } catch (err) {
+      console.error("Token decode error:", err);
+      next("/login");
+    }
   }
 };
 

@@ -1,141 +1,182 @@
 <template>
   <div class="subscription-form">
-    <h2>Subscribe to Our Plan</h2>
-    <form @submit.prevent="redirect">
-      <div class="form-group">
-        <label>Plan:</label>
-        <div class="plan-info">Basic Plan - $10/month</div>
+    <h2 class="form-title">Subscribe</h2>
+
+    <!-- Displayar innloggad restaurang data från eget api. -->
+    <div v-if="restaurantData" class="restaurant-info">
+      <p>
+        <strong>{{ restaurantData.name || "Name unavailable" }}</strong>
+      </p>
+      <p>{{ restaurantData.email || "Email unavailable" }}</p>
+      <p>Restaurant Slug: {{ restaurantData.slug || "Slug unavailable" }}</p>
+    </div>
+
+    <form @submit.prevent="createSubscription" class="form-container">
+      <div id="card-element" class="card-element-placeholder">
+        <!-- Stripe Card Element kommer att bli mountat HÄR! -->
       </div>
 
-      <div class="form-group">
-        <label>Card Details:</label>
-        <div class="card-element-placeholder">[Card input goes here]</div>
-      </div>
-
-      <button type="submit">Subscribe</button>
+      <button type="submit" class="submit-button" :disabled="isLoading">
+        {{ isLoading ? "Processing..." : "Subscribe" }}
+      </button>
     </form>
-    <div v-if="errorMessage" class="error">{{ errorMessage }}</div>
-    <div v-if="successMessage" class="success">{{ successMessage }}</div>
+
+    <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
   </div>
 </template>
 
 <script setup>
 import { onMounted, ref } from "vue";
 import { loadStripe } from "@stripe/stripe-js";
+import { useToast } from "vue-toastification";
 
-const stripe = ref(null);
-const errorMessage = ref(null);
-const successMessage = ref(null);
+const stripeInstance = ref(null);
+const elements = ref(null);
+let cardElement = null;
 
-// Replace this with a real Checkout Session ID from your backend.
-const TEST_CHECKOUT_SESSION_ID = "cs_test_xxx1234567890";
+const restaurantData = ref(null);
+const isLoading = ref(false);
+const errorMessage = ref("");
+const toast = useToast();
 
 onMounted(async () => {
   try {
-    const stripeInstance = await loadStripe(
-      import.meta.env.VITE_STRIPE_PUBLIC_KEY
+    const res = await fetch(
+      "http://localhost:8083/api/restaurants/restaurantdata",
+      {
+        credentials: "include",
+      }
     );
-    if (!stripeInstance) {
-      throw new Error("Failed to load Stripe");
+    const result = await res.json();
+    if (result.success) {
+      restaurantData.value = result.data;
+    } else {
+      console.error("Failed to fetch user data:", result.message);
     }
-    stripe.value = stripeInstance;
-    successMessage.value = "Stripe has been initialized successfully!";
   } catch (err) {
-    console.error("Error loading Stripe:", err);
-    errorMessage.value =
-      "An error occurred while initializing Stripe. Please try again later.";
+    console.error("Error fetching user data:", err);
   }
+
+  stripeInstance.value = await loadStripe(
+    import.meta.env.VITE_STRIPE_PUBLIC_KEY
+  );
+  elements.value = stripeInstance.value.elements();
+  cardElement = elements.value.create("card", {
+    style: { base: { fontSize: "16px" } },
+  });
+  cardElement.mount("#card-element");
 });
 
-async function redirect() {
-  if (!stripe.value) {
-    errorMessage.value = "Stripe not initialized.";
-    return;
-  }
+async function createSubscription() {
+  isLoading.value = true;
+  errorMessage.value = ""; // Clear previous error
 
-  // Use an actual session ID obtained from your backend after creating a Checkout Session.
-  const { error } = await stripe.value.redirectToCheckout({
-    sessionId: TEST_CHECKOUT_SESSION_ID,
-  });
+  try {
+    // Create a PaymentMethod from the card element
+    const { paymentMethod, error } =
+      await stripeInstance.value.createPaymentMethod({
+        type: "card",
+        card: cardElement,
+      });
 
-  if (error) {
-    errorMessage.value = error.message;
+    if (error) {
+      throw new Error("Payment method creation failed.");
+    }
+
+    // Send the paymentMethod.id and the planId to the backend
+    const response = await fetch(
+      "http://localhost:8083/api/subscriptions/subscribe",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          planId: "price_1QSqYXGAJFpbqKlxqX1I7Qud",
+          paymentMethodId: paymentMethod.id,
+        }),
+      }
+    );
+    const result = await response.json();
+
+    if (result.success) {
+      toast.success("Subscription created successfully! 🎉");
+    } else {
+      throw new Error(result.message || "Subscription failed.");
+    }
+  } catch (err) {
+    errorMessage.value = err.message || "An error occurred while subscribing.";
+    toast.error(errorMessage.value);
+    console.error("Subscription Error:", err);
+  } finally {
+    isLoading.value = false;
   }
 }
 </script>
 
 <style scoped>
 .subscription-form {
-  max-width: 400px;
-  margin: 40px auto;
-  font-family: Arial, sans-serif;
-}
-
-.subscription-form h2 {
+  max-width: 500px;
+  margin: auto;
+  padding: 2rem;
+  background: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   text-align: center;
-  margin-bottom: 20px;
 }
 
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
+.form-title {
+  font-size: 2rem;
   font-weight: bold;
-  margin-bottom: 8px;
+  margin-bottom: 1.5rem;
+  color: #2c3e50;
 }
 
-.plan-info,
-.card-element-placeholder,
-button {
-  width: 100%;
-  padding: 10px;
-  box-sizing: border-box;
+.restaurant-info {
+  background: #e8f4fc;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1.5rem;
+  font-size: 1rem;
+  text-align: left;
 }
 
-.plan-info {
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background: #f5f5f5;
-  font-size: 14px;
+.form-container {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .card-element-placeholder {
   border: 1px solid #ccc;
+  padding: 1rem;
   border-radius: 4px;
-  height: 40px;
-  background: #f9f9f9;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #999;
-  font-size: 14px;
+  background: white;
 }
 
-button {
-  background: #0070f3;
-  color: #fff;
+.submit-button {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  color: white;
+  background: #007bff;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 16px;
+  transition: background 0.3s;
 }
 
-button:hover {
-  background: #005bb5;
+.submit-button:hover {
+  background: #0056b3;
 }
 
-.error {
+.submit-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.error-message {
   color: red;
-  margin-top: 10px;
-}
-
-.success {
-  color: green;
-  margin-top: 10px;
+  margin-top: 1rem;
+  font-weight: bold;
 }
 </style>
