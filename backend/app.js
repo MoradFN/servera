@@ -11,6 +11,7 @@ import testRoute from "./routes/testRoute.js";
 import authRoute from "./routes/authRoute.js";
 import restaurantRoute from "./routes/restaurantRoute.js";
 import subscriptionRoutes from "./routes/subscriptionRoutes.js";
+import pageRoute from "./routes/pageRoute.js";
 
 import webhookRoute from "./routes/webhookRoute.js";
 
@@ -51,6 +52,7 @@ app.use(express.json());
 app.use("/api/auth", authRoute);
 app.use("/api/restaurants", restaurantRoute);
 app.use("/api/subscriptions", subscriptionRoutes);
+app.use("/api/pages", pageRoute);
 
 app.use("/api/test", testRoute);
 
