@@ -19,7 +19,11 @@ import DisplayRestaurantsView from "@/views/DisplayRestaurantsView.vue";
 
 // Owner Editable Page
 import EditPageWrapper from "@/views/admin/EditPageWrapper.vue";
-import { isAuthenticated } from "@/services/authService";
+
+// auth
+// import { isAuthenticated } from "@/services/authService";
+import { useRestaurantStore } from "@/stores/restaurantStore"; // If you use a restaurant store
+import { useAuthStore } from "@/stores/authStore";
 
 // Auth Guard
 // import {
@@ -31,13 +35,13 @@ import { isAuthenticated } from "@/services/authService";
 // Mock Function to Check Slug Existence
 async function checkSlug(to, from, next) {
   const validSlugs = ["italian-palace", "stripe-pizzeria", "test-pizzeria3"]; // Example slugs
-
   if (validSlugs.includes(to.params.slug)) {
     next(); // Proceed if slug exists
   } else {
-    next({ name: "NotFound" }); // Redirect to 404
+    next({ name: "NotFound" }); // Redirect to 404 if slug is invalid
   }
-} // Define routes
+}
+
 const routes = [
   // Public Pages (App Homepage)
   { path: "/", name: "Home", component: AppHomeView },
@@ -68,6 +72,12 @@ const routes = [
       { path: "", name: "RestaurantHome", component: RestaurantHome },
       { path: "about", name: "RestaurantAbout", component: RestaurantAbout },
       { path: "menu", name: "RestaurantMenu", component: RestaurantMenu },
+      //MTTODO: CHeck admin grejen
+      // {
+      //   path: "admin",
+      //   component: RestaurantAdmin,
+      //   meta: { requiresAuth: true },
+      // },
     ],
   },
 
@@ -76,7 +86,7 @@ const routes = [
     path: "/:slug/manage/:page",
     name: "EditPage",
     component: EditPageWrapper,
-    beforeEnter: isAuthenticated, // Auth Guard for protected pages
+    meta: { requiresAuth: true }, // Route needs auth
   },
 
   // 404 Not Found
@@ -93,15 +103,25 @@ const router = createRouter({
   routes,
 });
 
-// Global Navigation Guard
+// Managa hur routes är tillgängliga, vad som ska hända osv.
 router.beforeEach(async (to, from, next) => {
-  if (to.meta.requiresAuth) {
-    const user = await isAuthenticated();
-    if (!user) {
-      return next("/login"); // Redirect to login if not authenticated
+  const authStore = useAuthStore();
+  const restaurantStore = useRestaurantStore();
+
+  // Check authentication if required
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    await authStore.fetchAuthStatus(); // Fetch auth data only once
+    if (!authStore.isAuthenticated) {
+      return next("/login"); // Redirect if not authenticated
     }
   }
-  next(); // Allow if auth is not required or user is authenticated
+
+  // Pre-fetch restaurant data if route has a slug
+  if (to.params.slug && !restaurantStore.isDataCached(to.params.slug)) {
+    await restaurantStore.fetchRestaurantData(to.params.slug); // Preload restaurant
+  }
+
+  next(); // Allow navigation if all checks pass
 });
 
 export default router;

@@ -9,3 +9,15 @@ export async function isAuthenticated() {
     return null;
   }
 }
+
+// // authService.js
+// export function hasAuthToken() {
+//   return document.cookie.includes("authToken"); // Check token presence
+// }
+
+// // Skip API call if no token
+// async function checkAuthIfNeeded() {
+//   if (!hasAuthToken()) return null;
+//   const response = await axios.get("/auth/is-authenticated");
+//   return response.data.success ? response.data.user : null;
+// }
