@@ -1,5 +1,9 @@
 import { verifyToken } from "../utils/tokenUtils.js";
 import { createError } from "../utils/errorUtils.js";
+import { findRestaurantBySlug } from "../models/restaurantModel.js";
+
+// MTTODO ALL BELOW:
+// ???MTTODO: Consider grouping related middleware under an /auth path prefix in the main app, e.g., /auth/register, /auth/login.???
 
 // Authentication Check
 // Purpose: Ensure the user is logged in and the token is valid.
@@ -16,22 +20,33 @@ export const verifyJWT = (req, res, next) => {
     return next(createError(401, "Invalid or expired token"));
   }
 };
-
-// MTTODO ALL BELOW:
-// ???MTTODO: Consider grouping related middleware under an /auth path prefix in the main app, e.g., /auth/register, /auth/login.???
-
-//Not used, example code.
+//
 // Purpose: Ensure the logged-in restaurant owner is only accessing or modifying their own resources.
-// Middleware Example:
-export const verifyOwnership = (req, res, next) => {
-  const { id } = req.params;
-  if (req.user.id !== parseInt(id, 10)) {
-    return res.status(403).json({
+export const verifyOwnership = async (req, res, next) => {
+  const { slug } = req.params; // Extract restaurant slug from the URL
+  const userId = req.user.id; // Extract logged-in user ID from JWT
+
+  try {
+    // Find the restaurant by its slug
+    const restaurant = await findRestaurantBySlug(slug);
+
+    // Verify if the logged-in user is the owner
+    if (!restaurant || restaurant.id !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. You are not the owner of this restaurant.",
+      });
+    }
+
+    req.restaurant = restaurant; // Attach restaurant info for further use
+    next(); // Proceed if ownership is validated
+  } catch (error) {
+    console.error("Ownership validation failed:", error);
+    res.status(500).json({
       success: false,
-      message: "You do not have permission to access this resource.",
+      message: "Server error while verifying ownership.",
     });
   }
-  next();
 };
 // USAGE: router.post('/api/restaurants/:id/customize', authenticate, verifyOwnership, customizePage);
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -1,4 +1,12 @@
 import pool from "../config/database.js";
+
+// Find a restaurant by its slug used for verifyOwnership in authMiddleware
+export const findRestaurantBySlug = async (slug) => {
+  const query = `SELECT id, slug FROM restaurants WHERE slug = ? LIMIT 1`;
+  const [results] = await pool.query(query, [slug]);
+  return results[0]; // Return the restaurant if found
+};
+
 //////////////////////////////////////////////////////////////////////////////////
 
 // Find a restaurant by its ID used with  creating a subscription for now.
