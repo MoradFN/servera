@@ -19,13 +19,14 @@ import DisplayRestaurantsView from "@/views/DisplayRestaurantsView.vue";
 
 // Owner Editable Page
 import EditPageWrapper from "@/views/admin/EditPageWrapper.vue";
+import { isAuthenticated } from "@/services/authService";
 
 // Auth Guard
-import {
-  requireAuth,
-  requireSubscription,
-  requireOwner,
-} from "../auth/authGuards.js";
+// import {
+//   requireAuth,
+//   requireSubscription,
+//   requireOwner,
+// } from "../auth/authGuards.js";
 
 // Mock Function to Check Slug Existence
 async function checkSlug(to, from, next) {
@@ -56,7 +57,7 @@ const routes = [
     path: "/test",
     name: "Test",
     component: TestView, // Reuse the same page
-    beforeEnter: requireAuth,
+    meta: { requiresAuth: true }, // Route needs auth
   },
   // Restaurant Pages (Public-Facing)
   {
@@ -75,7 +76,7 @@ const routes = [
     path: "/:slug/manage/:page",
     name: "EditPage",
     component: EditPageWrapper,
-    beforeEnter: requireAuth, // Auth Guard for protected pages
+    beforeEnter: isAuthenticated, // Auth Guard for protected pages
   },
 
   // 404 Not Found
@@ -90,6 +91,17 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+});
+
+// Global Navigation Guard
+router.beforeEach(async (to, from, next) => {
+  if (to.meta.requiresAuth) {
+    const user = await isAuthenticated();
+    if (!user) {
+      return next("/login"); // Redirect to login if not authenticated
+    }
+  }
+  next(); // Allow if auth is not required or user is authenticated
 });
 
 export default router;

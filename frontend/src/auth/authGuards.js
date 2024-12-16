@@ -1,29 +1,29 @@
-import jwtDecode from "jwt-decode";
+// import jwtDecode from "jwt-decode";
 import { useCookies } from "@vueuse/integrations/useCookies";
 
-export const requireAuth = (to, from, next) => {
-  const cookies = useCookies();
-  const jwtToken = cookies.get("authToken");
+// export const requireAuth = (to, from, next) => {
+//   const cookies = useCookies();
+//   const jwtToken = cookies.get("authToken");
 
-  if (!jwtToken) {
-    next("/login");
-  } else {
-    try {
-      const decodedToken = jwtDecode(jwtToken);
-      const currentTime = Date.now() / 1000;
+//   if (!jwtToken) {
+//     next("/login");
+//   } else {
+//     try {
+//       const decodedToken = jwtDecode(jwtToken);
+//       const currentTime = Date.now() / 1000;
 
-      if (decodedToken.exp && decodedToken.exp < currentTime) {
-        cookies.remove("authToken"); // Remove expired token
-        next("/login");
-      } else {
-        next(); // Proceed if token is valid
-      }
-    } catch (err) {
-      console.error("Token decode error:", err);
-      next("/login");
-    }
-  }
-};
+//       if (decodedToken.exp && decodedToken.exp < currentTime) {
+//         cookies.remove("authToken"); // Remove expired token
+//         next("/login");
+//       } else {
+//         next(); // Proceed if token is valid
+//       }
+//     } catch (err) {
+//       console.error("Token decode error:", err);
+//       next("/login");
+//     }
+//   }
+// };
 
 // Subscription Guard: Checks if user has an active subscription
 export const requireSubscription = async (to, from, next) => {
