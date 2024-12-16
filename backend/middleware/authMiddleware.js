@@ -1,6 +1,7 @@
 import { verifyToken } from "../utils/tokenUtils.js";
 import { createError } from "../utils/errorUtils.js";
 import { findRestaurantBySlug } from "../models/restaurantModel.js";
+import { findSubscriptionByRestaurantId } from "../models/subscriptionModel.js";
 
 // MTTODO ALL BELOW:
 // ???MTTODO: Consider grouping related middleware under an /auth path prefix in the main app, e.g., /auth/register, /auth/login.???
@@ -48,7 +49,27 @@ export const verifyOwnership = async (req, res, next) => {
     });
   }
 };
-// USAGE: router.post('/api/restaurants/:id/customize', authenticate, verifyOwnership, customizePage);
+
+export const requireActiveSubscription = async (req, res, next) => {
+  const restaurantId = req.user.id; // From JWT
+  try {
+    const subscription = await findSubscriptionByRestaurantId(restaurantId);
+
+    if (!subscription || subscription.status !== "active") {
+      return res.status(403).json({
+        success: false,
+        message: "Active subscription required to access this resource.",
+      });
+    }
+
+    req.subscription = subscription; // Attach subscription info if needed
+    next(); // Allow access
+  } catch (error) {
+    console.error("Subscription check failed:", error);
+    res.status(500).json({ success: false, message: "Server error." });
+  }
+};
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Soft Deletion or Inactive Accounts
 // Purpose: Prevent access for accounts marked as inactive.
@@ -62,8 +83,7 @@ export const checkAccountActive = (req, res, next) => {
   }
   next();
 };
-// Usage: Apply this middleware to all authenticated routes:
-// router.post('/api/restaurants/:id/menu', authenticate, checkAccountActive, addMenuItem);
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // 6. Public Access
 // Purpose: Allow unauthenticated access to public-facing pages (e.g., /restaurantSlug).
