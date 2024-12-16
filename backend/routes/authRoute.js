@@ -9,6 +9,10 @@ import {
   loginValidationRules,
 } from "../validators/authValidators.js";
 import { runValidations } from "../middleware/validationMiddleware.js";
+
+import { verifyJWT } from "../middleware/authMiddleware.js";
+import { checkAuth } from "../controllers/authController.js";
+
 const router = express.Router();
 
 router.post(
@@ -18,6 +22,9 @@ router.post(
 );
 router.post("/login", runValidations(loginValidationRules), loginRestaurant);
 router.post("/logout", logout);
+
+// Protected route to check if logged in
+router.get("/is-authenticated", verifyJWT, checkAuth);
 
 export default router;
 

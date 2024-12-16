@@ -54,4 +54,18 @@ export async function logout(req, res, next) {
   }
 }
 
+export const checkAuth = (req, res) => {
+  if (req.user) {
+    res.status(200).json({
+      success: true,
+      user: req.user,
+    });
+  } else {
+    res.status(401).json({
+      success: false,
+      message: "Unauthorized",
+    });
+  }
+};
+
 export default { registerRestaurant, loginRestaurant, logout };

@@ -56,6 +56,7 @@ const routes = [
     path: "/test",
     name: "Test",
     component: TestView, // Reuse the same page
+    beforeEnter: requireAuth,
   },
   // Restaurant Pages (Public-Facing)
   {
