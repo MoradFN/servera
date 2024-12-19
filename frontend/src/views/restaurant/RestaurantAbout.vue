@@ -1,40 +1,25 @@
 <template>
-  <RestaurantLayout>
-    <template #hero>
-      <h1>About Us</h1>
-      <p>Learn more about our story and passion for food.</p>
-    </template>
-
-    <template #default>
-      <div class="about-content">
-        <h2>{{ restaurant.name }}</h2>
-        <p>{{ restaurant.description }}</p>
-        <img :src="restaurant.image" alt="Restaurant Image" />
-      </div>
-    </template>
-  </RestaurantLayout>
+  <div v-if="pageData">
+    <h2>About Us</h2>
+    <p v-for="section in pageData" :key="section.section_order">
+      {{ section.content }}
+    </p>
+  </div>
 </template>
 
 <script>
+import { useRoute } from "vue-router";
+import { useRestaurantStore } from "@/stores/restaurantStore.js";
+
 export default {
-  data() {
+  setup() {
+    const route = useRoute();
+    const restaurantStore = useRestaurantStore();
+    restaurantStore.fetchPage(route.params.slug, "about");
+
     return {
-      restaurant: {},
+      pageData: restaurantStore.pageData,
     };
-  },
-  async created() {
-    const response = await fetch(`/api/restaurants/${this.$route.params.slug}`);
-    this.restaurant = await response.json();
   },
 };
 </script>
-
-<style scoped>
-.about-content {
-  text-align: center;
-}
-img {
-  max-width: 100%;
-  height: auto;
-}
-</style>
