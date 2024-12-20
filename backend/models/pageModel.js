@@ -41,3 +41,46 @@ export const findPageByName = async (restaurantId, pageName) => {
     throw new Error(`Error finding page: ${err.message}`);
   }
 };
+
+// Query for Home and About pages
+export const findPageWithSections = async (slug, pageName) => {
+  const query = `
+    SELECT 
+      p.name AS page_name,
+      s.section_type, 
+      s.content, 
+      s.section_order 
+    FROM pages p
+    INNER JOIN sections s ON p.id = s.page_id
+    INNER JOIN restaurants r ON p.restaurant_id = r.id
+    WHERE r.slug = ? AND p.name = ? 
+      AND p.is_active = TRUE AND s.is_active = TRUE
+    ORDER BY s.section_order
+  `;
+
+  const [results] = await pool.query(query, [slug, pageName]);
+  return results.length > 0 ? results : null;
+};
+
+// // Query for Menu
+// export const findMenuBySlug = async (slug) => {
+//   const query = `
+//     SELECT
+//       c.name AS category_name,
+//       c.display_order AS category_order,
+//       mi.name AS item_name,
+//       mi.standard_price,
+//       mi.family_price,
+//       mi.display_order AS item_order
+//     FROM menu_categories c
+//     INNER JOIN menu_items mi ON c.id = mi.category_id
+//     INNER JOIN restaurants r ON c.restaurant_id = r.id
+//     WHERE r.slug = ?
+//       AND c.is_active = TRUE
+//       AND mi.is_active = TRUE
+//     ORDER BY c.display_order, mi.display_order
+//   `;
+
+//   const [results] = await pool.query(query, [slug]);
+//   return results.length > 0 ? results : null;
+// };
