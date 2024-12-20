@@ -24,6 +24,7 @@ import EditPageWrapper from "@/views/admin/EditPageWrapper.vue";
 // import { isAuthenticated } from "@/services/authService";
 import { useRestaurantStore } from "@/stores/restaurantStore"; // If you use a restaurant store
 import { useAuthStore } from "@/stores/authStore";
+import TestRestaurantPage from "@/views/restaurant/TestRestaurantPage.vue";
 
 // Auth Guard
 // import {
@@ -31,16 +32,6 @@ import { useAuthStore } from "@/stores/authStore";
 //   requireSubscription,
 //   requireOwner,
 // } from "../auth/authGuards.js";
-
-// Mock Function to Check Slug Existence
-async function checkSlug(to, from, next) {
-  const validSlugs = ["italian-palace", "stripe-pizzeria", "test-pizzeria3"]; // Example slugs
-  if (validSlugs.includes(to.params.slug)) {
-    next(); // Proceed if slug exists
-  } else {
-    next({ name: "NotFound" }); // Redirect to 404 if slug is invalid
-  }
-}
 
 const routes = [
   // Public Pages (App Homepage)
@@ -63,11 +54,16 @@ const routes = [
     component: TestView, // Reuse the same page
     meta: { requiresAuth: true }, // Route needs auth
   },
+  {
+    path: "/test-restaurant",
+    name: "TestRestaurant",
+    component: TestRestaurantPage,
+  },
+
   // Restaurant Pages (Public-Facing)
   {
-    path: "/:slug([a-z0-9-]+)",
+    path: "/:slug",
     component: RestaurantLayout, // Shared layout for restaurant pages
-    beforeEnter: checkSlug,
     children: [
       { path: "", name: "RestaurantHome", component: RestaurantHome },
       { path: "about", name: "RestaurantAbout", component: RestaurantAbout },

@@ -3,35 +3,72 @@ import axios from "@/services/axios";
 
 export const useRestaurantStore = defineStore("restaurant", {
   state: () => ({
-    restaurantData: null, // Holds restaurant details
-    currentSlug: null, // Tracks current slug
+    restaurantData: {}, // Holds data for all pages
+    currentSlug: null, // Tracks current restaurant slug
   }),
 
   actions: {
     // Check if data is already cached
     isDataCached(slug) {
-      return this.currentSlug === slug && this.restaurantData !== null;
+      return (
+        this.currentSlug === slug && Object.keys(this.restaurantData).length > 0
+      );
     },
 
-    // Fetch restaurant data if not cached
+    // Fetch all restaurant pages (home, about, menu)
     async fetchRestaurantData(slug) {
       if (this.isDataCached(slug)) {
-        console.log("Data already cached, skipping fetch.");
+        console.log(`✅ Data already cached for ${slug}. Skipping fetch.`);
         return this.restaurantData; // Return cached data
       }
 
       try {
-        const response = await axios.get(`/restaurants/${slug}`);
-        this.restaurantData = response.data.data; // Store fetched data
-        this.currentSlug = slug; // Update current slug
-        return response.data.data; // Return data
-      } catch (error) {
-        console.error(
-          "Failed to fetch restaurant data:",
-          error.response.data.message
+        console.log(`🔄 Fetching available pages for ${slug}...`);
+
+        // Define pages to fetch
+        const pages = ["home", "about", "menu"];
+
+        // Use Promise.allSettled to handle partial success
+        const results = await Promise.allSettled(
+          pages.map((page) => axios.get(`/pages/${slug}/${page}`))
         );
-        throw new Error("Data fetch failed");
+
+        // Populate restaurantData only with successful pages
+        results.forEach((result, index) => {
+          if (result.status === "fulfilled" && result.value.data.data) {
+            const pageName = pages[index];
+            this.restaurantData[pageName] = result.value.data.data;
+            console.log(`✅ Page '${pageName}' loaded successfully.`);
+          } else {
+            console.warn(
+              `⚠️ Page '${pages[index]}' not found for restaurant '${slug}'.`
+            );
+          }
+        });
+
+        this.currentSlug = slug;
+
+        // Check if at least one page is loaded
+        if (Object.keys(this.restaurantData).length === 0) {
+          throw new Error("No pages found for this restaurant.");
+        }
+
+        console.log("✅ Fetch complete:", this.restaurantData);
+        return this.restaurantData; // Return available data
+      } catch (error) {
+        console.error("❌ Fetch failed:", error.message);
+
+        // Reset state and rethrow error
+        this.restaurantData = {};
+        this.currentSlug = null;
+        throw new Error("Failed to fetch restaurant data");
       }
+    },
+
+    // Reset data (if needed)
+    resetStore() {
+      this.restaurantData = {};
+      this.currentSlug = null;
     },
   },
 });
