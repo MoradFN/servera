@@ -72,36 +72,3 @@ export const useRestaurantStore = defineStore("restaurant", {
     },
   },
 });
-
-// import { defineStore } from "pinia";
-// import axios from "@/services/axios";
-
-// export const useRestaurantStore = defineStore("restaurant", {
-//   state: () => ({
-//     pageData: null,
-//     menuData: null,
-//     currentSlug: null,
-//   }),
-
-//   actions: {
-//     async fetchPage(slug, pageName) {
-//       try {
-//         const response = await axios.get(`/pages/${slug}/${pageName}`);
-//         this.pageData = response.data.data;
-//         this.currentSlug = slug;
-//       } catch (error) {
-//         console.error("Failed to fetch page data:", error);
-//       }
-//     },
-
-//     async fetchMenu(slug) {
-//       try {
-//         const response = await axios.get(`/pages/${slug}/menu`);
-//         this.menuData = response.data.data;
-//         this.currentSlug = slug;
-//       } catch (error) {
-//         console.error("Failed to fetch menu:", error);
-//       }
-//     },
-//   },
-// });

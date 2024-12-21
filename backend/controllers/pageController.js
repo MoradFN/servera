@@ -55,22 +55,26 @@ export const fetchPageHandler = async (req, res) => {
   }
 };
 
-// export const fetchMenuHandler = async (req, res) => {
-//   const { slug } = req.params;
-//   try {
-//     const menuData = await findMenuBySlug(slug);
-//     if (!menuData) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "Menu not found.",
-//       });
-//     }
-//     res.json({ success: true, data: menuData });
-//   } catch (error) {
-//     console.error("Error fetching menu:", error);
-//     res.status(500).json({
-//       success: false,
-//       message: "Server error while fetching the menu.",
-//     });
-//   }
-// };
+// Handle Menu Page
+export const fetchMenuHandler = async (req, res) => {
+  const { slug } = req.params;
+
+  try {
+    const menuData = await findMenuBySlug(slug);
+
+    if (!menuData) {
+      return res.status(404).json({
+        success: false,
+        message: `Menu not found for restaurant '${slug}'.`,
+      });
+    }
+
+    res.json({ success: true, data: menuData });
+  } catch (error) {
+    console.error("Error fetching menu:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching the menu.",
+    });
+  }
+};

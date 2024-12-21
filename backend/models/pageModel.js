@@ -62,7 +62,7 @@ export const findPageWithSections = async (slug, pageName) => {
   return results.length > 0 ? results : null;
 };
 
-// // Query for Menu
+// // // Query for Menu
 // export const findMenuBySlug = async (slug) => {
 //   const query = `
 //     SELECT
@@ -81,6 +81,21 @@ export const findPageWithSections = async (slug, pageName) => {
 //     ORDER BY c.display_order, mi.display_order
 //   `;
 
+//   const [results] = await pool.query(query, [slug]);
+//   return results.length > 0 ? results : null;
+// };
+
+// export const findMenuBySlug = async (slug) => {
+//   const query = `
+//     SELECT
+//       mc.name AS category_name, mi.name AS item_name,
+//       mi.standard_price, mi.family_price, mi.cooking_time
+//     FROM menu_categories mc
+//     JOIN menu_items mi ON mc.id = mi.category_id
+//     JOIN restaurants r ON r.id = mc.restaurant_id
+//     WHERE r.slug = ? AND mc.is_active = TRUE AND mi.is_active = TRUE
+//     ORDER BY mc.display_order, mi.display_order;
+//   `;
 //   const [results] = await pool.query(query, [slug]);
 //   return results.length > 0 ? results : null;
 // };
