@@ -1,6 +1,7 @@
 // controllers/pageController.js
 import { createPageWithSections } from "../services/pageService.js";
 import { findPageWithSections } from "../models/pageModel.js";
+import { findMenuBySlug } from "../models/menuModel.js";
 
 export const createPageHandler = async (req, res) => {
   const { slug } = req.params;
@@ -56,7 +57,7 @@ export const fetchPageHandler = async (req, res) => {
 };
 
 // Handle Menu Page
-export const fetchMenuHandler = async (req, res) => {
+export const fetchMenuPageHandler = async (req, res) => {
   const { slug } = req.params;
 
   try {
