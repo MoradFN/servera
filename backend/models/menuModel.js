@@ -24,3 +24,20 @@ export const findMenuItemsBySlug = async (slug) => {
   const [results] = await pool.query(query, [slug]);
   return results;
 };
+
+export const findIngredientsByMenuItems = async (menuItemIds) => {
+  if (menuItemIds.length === 0) return [];
+
+  const query = `
+    SELECT 
+      r.menu_item_id, 
+      i.id AS ingredient_id, 
+      i.name AS ingredient_name 
+    FROM r_menu_item_ingredients r
+    JOIN ingredients i ON r.ingredient_id = i.id
+    WHERE r.menu_item_id IN (?)
+  `;
+
+  const [results] = await pool.query(query, [menuItemIds]);
+  return results;
+};

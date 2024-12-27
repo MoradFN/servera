@@ -4,6 +4,7 @@ import { findPageWithSections } from "../models/pageModel.js";
 import {
   findMenuCategoriesBySlug,
   findMenuItemsBySlug,
+  findIngredientsByMenuItems,
 } from "../models/menuModel.js";
 
 export const createPageHandler = async (req, res) => {
@@ -68,6 +69,21 @@ export const fetchMenuPageHandler = async (req, res) => {
     const categories = (await findMenuCategoriesBySlug(slug)) || [];
     const items = (await findMenuItemsBySlug(slug)) || [];
 
+    // Fetch ingredients for menu items
+    const itemIds = items.map((item) => item.id);
+    const ingredients = await findIngredientsByMenuItems(itemIds);
+
+    // Associate ingredients with menu items
+    const itemsWithIngredients = items.map((item) => ({
+      ...item,
+      ingredients: ingredients
+        .filter((ingredient) => ingredient.menu_item_id === item.id)
+        .map((ingredient) => ({
+          id: ingredient.ingredient_id,
+          name: ingredient.ingredient_name,
+        })),
+    }));
+
     // Format the response structure
     const menuData = {
       sections: sections.map((section) => ({
@@ -81,13 +97,7 @@ export const fetchMenuPageHandler = async (req, res) => {
         name: category.name,
         display_order: category.display_order,
       })),
-      items: items.map((item) => ({
-        id: item.id,
-        name: item.name,
-        standard_price: item.standard_price,
-        family_price: item.family_price,
-        category_id: item.category_id,
-      })),
+      items: itemsWithIngredients,
     };
 
     res.status(200).json({
