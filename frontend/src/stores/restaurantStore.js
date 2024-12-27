@@ -46,6 +46,18 @@ export const useRestaurantStore = defineStore("restaurant", {
           }
         });
 
+        // Fetch menu-specific data if the menu page exists
+        if (this.restaurantData.menu) {
+          console.log("🔄 Fetching menu categories and items...");
+          const menuRes = await axios.get(`/pages/${slug}/menu`);
+          this.restaurantData.menu = {
+            sections: this.restaurantData.menu, // Existing sections
+            categories: menuRes.data.data.categories || [],
+            items: menuRes.data.data.items || [],
+          };
+          console.log("✅ Menu categories and items fetched successfully.");
+        }
+
         this.currentSlug = slug;
 
         // Check if at least one page is loaded

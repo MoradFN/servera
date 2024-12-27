@@ -1,7 +1,10 @@
 // controllers/pageController.js
 import { createPageWithSections } from "../services/pageService.js";
 import { findPageWithSections } from "../models/pageModel.js";
-import { findMenuBySlug } from "../models/menuModel.js";
+import {
+  findMenuCategoriesBySlug,
+  findMenuItemsBySlug,
+} from "../models/menuModel.js";
 
 export const createPageHandler = async (req, res) => {
   const { slug } = req.params;
@@ -56,26 +59,30 @@ export const fetchPageHandler = async (req, res) => {
   }
 };
 
-// Handle Menu Page
 export const fetchMenuPageHandler = async (req, res) => {
   const { slug } = req.params;
 
   try {
-    const menuData = await findMenuBySlug(slug);
+    // Fetch menu page sections
+    const pageData = await findPageWithSections(slug, "menu");
 
-    if (!menuData) {
-      return res.status(404).json({
-        success: false,
-        message: `Menu not found for restaurant '${slug}'.`,
-      });
-    }
+    // Fetch menu categories and items
+    const categories = await findMenuCategoriesBySlug(slug);
+    const items = await findMenuItemsBySlug(slug);
 
-    res.json({ success: true, data: menuData });
+    // Combine all data
+    const menuData = {
+      sections: pageData || [],
+      categories: categories || [],
+      items: items || [],
+    };
+
+    res.status(200).json({ success: true, data: menuData });
   } catch (error) {
-    console.error("Error fetching menu:", error);
+    console.error("Error fetching menu page:", error);
     res.status(500).json({
       success: false,
-      message: "Server error while fetching the menu.",
+      message: "Server error while fetching the menu page.",
     });
   }
 };
