@@ -37,16 +37,24 @@ export const useRestaurantStore = defineStore("restaurant", {
         results.forEach((result, index) => {
           if (result.status === "fulfilled" && result.value.data.data) {
             const pageName = pages[index];
+            const pageData = result.value.data.data;
+
             if (pageName === "menu") {
-              const menuData = result.value.data.data;
+              // Handle menu data structure
               this.restaurantData[pageName] = {
-                sections: menuData.sections || [],
-                categories: menuData.categories || [],
-                items: menuData.items || [],
+                sections: pageData.sections || [],
+                categories: pageData.categories || [],
+                items:
+                  pageData.items?.map((item) => ({
+                    ...item,
+                    ingredients: item.ingredients || [], // Handle ingredients
+                  })) || [],
               };
             } else {
-              this.restaurantData[pageName] = result.value.data.data;
+              // Handle non-menu pages
+              this.restaurantData[pageName] = pageData;
             }
+
             console.log(`✅ Page '${pageName}' loaded successfully.`);
           } else {
             console.warn(

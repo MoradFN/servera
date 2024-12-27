@@ -27,6 +27,12 @@
             <span v-if="item.family_price"
               >(Family: ${{ item.family_price }})</span
             >
+
+            <ul v-if="item.ingredients.length > 0">
+              <li v-for="ingredient in item.ingredients" :key="ingredient.id">
+                - {{ ingredient.name }}
+              </li>
+            </ul>
           </li>
         </ul>
       </div>
@@ -53,7 +59,7 @@ export default {
     const menuCategories = computed(() => menuData.value.categories || []);
     const menuItems = computed(() => menuData.value.items || []);
 
-    // Pre-compute categorized items
+    // Map categories to items
     const categorizedItems = computed(() => {
       const mapping = {};
       menuCategories.value.forEach((category) => {
@@ -67,7 +73,7 @@ export default {
     return {
       menuSections,
       menuCategories,
-      categorizedItems, // Use pre-computed categorized items
+      categorizedItems,
     };
   },
 };
