@@ -37,7 +37,16 @@ export const useRestaurantStore = defineStore("restaurant", {
         results.forEach((result, index) => {
           if (result.status === "fulfilled" && result.value.data.data) {
             const pageName = pages[index];
-            this.restaurantData[pageName] = result.value.data.data;
+            if (pageName === "menu") {
+              const menuData = result.value.data.data;
+              this.restaurantData[pageName] = {
+                sections: menuData.sections || [],
+                categories: menuData.categories || [],
+                items: menuData.items || [],
+              };
+            } else {
+              this.restaurantData[pageName] = result.value.data.data;
+            }
             console.log(`✅ Page '${pageName}' loaded successfully.`);
           } else {
             console.warn(
@@ -45,18 +54,6 @@ export const useRestaurantStore = defineStore("restaurant", {
             );
           }
         });
-
-        // Fetch menu-specific data if the menu page exists
-        if (this.restaurantData.menu) {
-          console.log("🔄 Fetching menu categories and items...");
-          const menuRes = await axios.get(`/pages/${slug}/menu`);
-          this.restaurantData.menu = {
-            sections: this.restaurantData.menu, // Existing sections
-            categories: menuRes.data.data.categories || [],
-            items: menuRes.data.data.items || [],
-          };
-          console.log("✅ Menu categories and items fetched successfully.");
-        }
 
         this.currentSlug = slug;
 

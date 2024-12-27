@@ -21,7 +21,7 @@
       >
         <h2>{{ category.name }}</h2>
         <ul>
-          <li v-for="item in filteredItems(category.id)" :key="item.id">
+          <li v-for="item in categorizedItems[category.id]" :key="item.id">
             <strong>{{ item.name }}</strong>
             <span v-if="item.standard_price">- ${{ item.standard_price }}</span>
             <span v-if="item.family_price"
@@ -53,15 +53,21 @@ export default {
     const menuCategories = computed(() => menuData.value.categories || []);
     const menuItems = computed(() => menuData.value.items || []);
 
-    // Filter items by category ID
-    const filteredItems = (categoryId) =>
-      menuItems.value.filter((item) => item.category_id === categoryId);
+    // Pre-compute categorized items
+    const categorizedItems = computed(() => {
+      const mapping = {};
+      menuCategories.value.forEach((category) => {
+        mapping[category.id] = menuItems.value.filter(
+          (item) => item.category_id === category.id
+        );
+      });
+      return mapping;
+    });
 
     return {
       menuSections,
       menuCategories,
-      menuItems,
-      filteredItems,
+      categorizedItems, // Use pre-computed categorized items
     };
   },
 };

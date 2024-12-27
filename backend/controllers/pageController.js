@@ -63,21 +63,37 @@ export const fetchMenuPageHandler = async (req, res) => {
   const { slug } = req.params;
 
   try {
-    // Fetch menu page sections
-    const pageData = await findPageWithSections(slug, "menu");
+    // Fetch menu sections, categories, and items
+    const sections = (await findPageWithSections(slug, "menu")) || [];
+    const categories = (await findMenuCategoriesBySlug(slug)) || [];
+    const items = (await findMenuItemsBySlug(slug)) || [];
 
-    // Fetch menu categories and items
-    const categories = await findMenuCategoriesBySlug(slug);
-    const items = await findMenuItemsBySlug(slug);
-
-    // Combine all data
+    // Format the response structure
     const menuData = {
-      sections: pageData || [],
-      categories: categories || [],
-      items: items || [],
+      sections: sections.map((section) => ({
+        page_name: "menu",
+        section_type: section.section_type,
+        content: section.content,
+        section_order: section.section_order,
+      })),
+      categories: categories.map((category) => ({
+        id: category.id,
+        name: category.name,
+        display_order: category.display_order,
+      })),
+      items: items.map((item) => ({
+        id: item.id,
+        name: item.name,
+        standard_price: item.standard_price,
+        family_price: item.family_price,
+        category_id: item.category_id,
+      })),
     };
 
-    res.status(200).json({ success: true, data: menuData });
+    res.status(200).json({
+      success: true,
+      data: menuData,
+    });
   } catch (error) {
     console.error("Error fetching menu page:", error);
     res.status(500).json({
