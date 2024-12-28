@@ -1,46 +1,56 @@
 <template>
   <div class="restaurant-layout">
-    <NavBar />
+    <!-- Navigation Bar -->
+    <NavBar
+      :restaurantName="restaurantData?.home[0]?.content || 'Restaurant'"
+    />
 
+    <!-- Hero Section -->
+    <section class="hero">
+      <slot name="hero">
+        <h1>{{ restaurantData?.home[0]?.content || "Welcome!" }}</h1>
+      </slot>
+    </section>
+
+    <!-- Main Content -->
     <main>
-      <section class="hero">
-        <slot name="hero"></slot>
-      </section>
-
-      <section class="content">
-        <slot />
-      </section>
-
-      <!-- Reusable Modal -->
-      <AddMenuItemModal v-if="isModalVisible" @close="closeModal">
-        <h2>Add Menu Item</h2>
-        <p>Form for creating a new menu item goes here...</p>
-      </AddMenuItemModal>
+      <slot />
+      <router-view />
+      <!-- Render child routes dynamically -->
     </main>
 
+    <!-- Footer -->
     <Footer />
   </div>
 </template>
 
 <script>
-import NavBar from "@/components/Navbar.vue";
+import NavBar from "@/components/NavBar.vue";
 import Footer from "@/components/Footer.vue";
-import AddMenuItemModal from "@/components/AddMenuItemModal.vue";
+import { useRestaurantStore } from "@/stores/restaurantStore";
+import { computed, onMounted } from "vue";
+import { useRoute } from "vue-router";
 
 export default {
-  components: { NavBar, Footer, AddMenuItemModal },
-  data() {
+  components: { NavBar, Footer },
+  setup() {
+    const route = useRoute();
+    const restaurantStore = useRestaurantStore();
+    const slug = computed(() => route.params.slug);
+
+    // Fetch restaurant data when the component is mounted
+    onMounted(async () => {
+      try {
+        await restaurantStore.fetchRestaurantData(slug.value);
+      } catch (error) {
+        console.error("Failed to fetch restaurant data:", error.message);
+      }
+    });
+
     return {
-      isModalVisible: false,
+      slug,
+      restaurantData: restaurantStore.restaurantData,
     };
-  },
-  methods: {
-    openModal() {
-      this.isModalVisible = true;
-    },
-    closeModal() {
-      this.isModalVisible = false;
-    },
   },
 };
 </script>
@@ -51,16 +61,13 @@ export default {
   flex-direction: column;
   min-height: 100vh;
 }
-main {
-  flex: 1;
-  padding: 2rem;
-}
 .hero {
   background: lightblue;
-  padding: 2rem;
   text-align: center;
+  padding: 2rem;
 }
-.content {
+main {
+  flex: 1;
   padding: 2rem;
 }
 </style>

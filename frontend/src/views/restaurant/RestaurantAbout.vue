@@ -1,40 +1,34 @@
 <template>
-  <RestaurantLayout>
-    <template #hero>
-      <h1>About Us</h1>
-      <p>Learn more about our story and passion for food.</p>
-    </template>
-
-    <template #default>
-      <div class="about-content">
-        <h2>{{ restaurant.name }}</h2>
-        <p>{{ restaurant.description }}</p>
-        <img :src="restaurant.image" alt="Restaurant Image" />
-      </div>
-    </template>
-  </RestaurantLayout>
+  <div>
+    <!-- Render all sections dynamically -->
+    <div v-for="section in aboutPage" :key="section.section_order">
+      <h1 v-if="section.section_type === 'title'">{{ section.content }}</h1>
+      <p v-else-if="section.section_type === 'text'">{{ section.content }}</p>
+      <img
+        v-else-if="section.section_type === 'image'"
+        :src="section.content"
+        alt="Image Content"
+      />
+      <!-- Add more section types here as needed -->
+      <p v-else>Unsupported section type: {{ section.section_type }}</p>
+    </div>
+  </div>
 </template>
 
 <script>
+import { useRestaurantStore } from "@/stores/restaurantStore";
+import { computed } from "vue";
+
 export default {
-  data() {
+  setup() {
+    const store = useRestaurantStore();
+
+    // Computed property for the "about" page data
+    const aboutPage = computed(() => store.restaurantData?.about || []);
+
     return {
-      restaurant: {},
+      aboutPage,
     };
-  },
-  async created() {
-    const response = await fetch(`/api/restaurants/${this.$route.params.slug}`);
-    this.restaurant = await response.json();
   },
 };
 </script>
-
-<style scoped>
-.about-content {
-  text-align: center;
-}
-img {
-  max-width: 100%;
-  height: auto;
-}
-</style>

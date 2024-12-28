@@ -41,3 +41,23 @@ export const findPageByName = async (restaurantId, pageName) => {
     throw new Error(`Error finding page: ${err.message}`);
   }
 };
+
+// Query for Home and About pages
+export const findPageWithSections = async (slug, pageName) => {
+  const query = `
+    SELECT 
+      p.name AS page_name,
+      s.section_type, 
+      s.content, 
+      s.section_order 
+    FROM pages p
+    INNER JOIN sections s ON p.id = s.page_id
+    INNER JOIN restaurants r ON p.restaurant_id = r.id
+    WHERE r.slug = ? AND p.name = ? 
+      AND p.is_active = TRUE AND s.is_active = TRUE
+    ORDER BY s.section_order
+  `;
+
+  const [results] = await pool.query(query, [slug, pageName]);
+  return results.length > 0 ? results : null;
+};
