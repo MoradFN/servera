@@ -60,6 +60,28 @@ export const fetchPageHandler = async (req, res) => {
   }
 };
 
+// UTILITY!!
+function buildCategoryTree(categories) {
+  const categoryMap = {};
+  const tree = [];
+
+  // Create a map of all categories
+  categories.forEach((category) => {
+    categoryMap[category.id] = { ...category, children: [] };
+  });
+
+  // Build the tree structure
+  categories.forEach((category) => {
+    if (category.parent_id) {
+      categoryMap[category.parent_id].children.push(categoryMap[category.id]);
+    } else {
+      tree.push(categoryMap[category.id]);
+    }
+  });
+
+  return tree;
+}
+
 export const fetchMenuPageHandler = async (req, res) => {
   const { slug } = req.params;
 
@@ -84,6 +106,9 @@ export const fetchMenuPageHandler = async (req, res) => {
         })),
     }));
 
+    // Build category tree
+    const categoryTree = buildCategoryTree(categories);
+
     // Format the response structure
     const menuData = {
       sections: sections.map((section) => ({
@@ -92,11 +117,7 @@ export const fetchMenuPageHandler = async (req, res) => {
         content: section.content,
         section_order: section.section_order,
       })),
-      categories: categories.map((category) => ({
-        id: category.id,
-        name: category.name,
-        display_order: category.display_order,
-      })),
+      categories: categoryTree,
       items: itemsWithIngredients,
     };
 

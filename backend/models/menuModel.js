@@ -2,12 +2,12 @@ import pool from "../config/database.js";
 
 export const findMenuCategoriesBySlug = async (slug) => {
   const query = `
-      SELECT mc.id, mc.name, mc.display_order
-      FROM menu_categories mc
-      JOIN restaurants r ON mc.restaurant_id = r.id
-      WHERE r.slug = ? AND mc.is_active = TRUE
-      ORDER BY mc.display_order;
-    `;
+    SELECT mc.id, mc.name, mc.display_order, mc.parent_id
+    FROM menu_categories mc
+    JOIN restaurants r ON mc.restaurant_id = r.id
+    WHERE r.slug = ? AND mc.is_active = TRUE
+    ORDER BY mc.display_order;
+  `;
   const [results] = await pool.query(query, [slug]);
   return results;
 };
