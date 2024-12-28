@@ -82,13 +82,17 @@
 
 <script setup>
 import { computed } from "vue";
-import { useRestaurantStore } from "@/stores/restaurantStore";
 
-// Access the store
-const store = useRestaurantStore();
+// Define props
+const props = defineProps({
+  restaurantData: {
+    type: Object,
+    required: true,
+  },
+});
 
 // Extract menu data
-const menuData = computed(() => store.restaurantData?.menu || {});
+const menuData = computed(() => props.restaurantData?.menu || {});
 const menuSections = computed(() => menuData.value.sections || []);
 const menuCategories = computed(() => menuData.value.categories || []);
 const menuItems = computed(() => menuData.value.items || []);
