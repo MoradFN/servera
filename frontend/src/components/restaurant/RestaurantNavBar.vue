@@ -1,32 +1,32 @@
 <script setup>
 import { computed } from "vue";
 import { useAuthStore } from "@/stores/authStore";
-import { useRestaurantStore } from "@/stores/restaurantStore";
 import { useRoute } from "vue-router";
+
+// Define props to accept restaurant data
+const props = defineProps({
+  restaurantData: {
+    type: Object,
+    required: true,
+  },
+});
 
 const route = useRoute();
 const authStore = useAuthStore();
-const restaurantStore = useRestaurantStore();
 
-// Extract dynamic data
-const restaurantName = computed(
-  () => restaurantStore.restaurantData?.home[0]?.content || "Restaurant"
-);
+// Extract slug
 const slug = route.params.slug;
-
-// Check if the user owns this restaurant
-const isOwner = computed(() => authStore.user?.id === restaurantStore.ownerId);
 
 // Define available pages dynamically
 const availablePages = computed(() => {
   const pages = [];
-  if (restaurantStore.restaurantData?.home) {
+  if (props.restaurantData?.home) {
     pages.push({ name: "Home", path: `/${slug}` });
   }
-  if (restaurantStore.restaurantData?.about) {
+  if (props.restaurantData?.about) {
     pages.push({ name: "About", path: `/${slug}/about` });
   }
-  if (restaurantStore.restaurantData?.menu) {
+  if (props.restaurantData?.menu) {
     pages.push({ name: "Menu", path: `/${slug}/menu` });
   }
   return pages;
@@ -34,18 +34,22 @@ const availablePages = computed(() => {
 
 // Determine active link
 const isActiveLink = (routePath) => route.path === routePath;
+
+// Check if the user owns this restaurant
+const isOwner = computed(
+  () => authStore.user?.id === props.restaurantData?.ownerId
+);
 </script>
 
 <template>
   <nav class="restaurant-nav">
-    <!-- Logo Image -->
-    <!-- <img :src="logo" alt="App Logo" class="logo" /> -->
-
+    <!-- Dynamic Navigation Links -->
     <div v-for="page in availablePages" :key="page.path">
       <router-link :to="page.path" :class="{ active: isActiveLink(page.path) }">
         {{ page.name }}
       </router-link>
     </div>
+
     <!-- Owner Links (if user is logged in and owns the restaurant) -->
     <li v-if="isOwner">
       <router-link :to="{ path: `/${slug}/admin` }">Manage Home</router-link>

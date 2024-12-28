@@ -1,9 +1,7 @@
 <template>
   <div class="restaurant-layout">
-    <!-- Navigation Bar -->
-    <RestaurantNavBar
-      :restaurantName="restaurantData?.home[0]?.content || 'Restaurant'"
-    />
+    <!-- Pass restaurant data to NavBar -->
+    <RestaurantNavBar :restaurantData="restaurantData" />
 
     <!-- Hero Section -->
     <section class="hero">
