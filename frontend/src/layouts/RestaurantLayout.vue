@@ -1,7 +1,7 @@
 <template>
   <div class="restaurant-layout">
     <!-- Navigation Bar -->
-    <NavBar
+    <RestaurantNavBar
       :restaurantName="restaurantData?.home[0]?.content || 'Restaurant'"
     />
 
@@ -24,14 +24,14 @@
 </template>
 
 <script>
-import NavBar from "@/components/NavBar.vue";
 import Footer from "@/components/Footer.vue";
 import { useRestaurantStore } from "@/stores/restaurantStore";
 import { computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
+import RestaurantNavBar from "@/components/restaurant/RestaurantNavBar.vue";
 
 export default {
-  components: { NavBar, Footer },
+  components: { RestaurantNavBar, Footer },
   setup() {
     const route = useRoute();
     const restaurantStore = useRestaurantStore();

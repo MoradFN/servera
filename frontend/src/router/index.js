@@ -25,6 +25,7 @@ import EditPageWrapper from "@/views/admin/EditPageWrapper.vue";
 import { useRestaurantStore } from "@/stores/restaurantStore"; // If you use a restaurant store
 import { useAuthStore } from "@/stores/authStore";
 import TestRestaurantPage from "@/views/restaurant/TestRestaurantPage.vue";
+import AdminDashboard from "@/views/admin/AdminDashboard.vue";
 
 // Auth Guard
 // import {
@@ -69,11 +70,11 @@ const routes = [
       { path: "about", name: "RestaurantAbout", component: RestaurantAbout },
       { path: "menu", name: "RestaurantMenu", component: RestaurantMenu },
       //MTTODO: CHeck admin grejen
-      // {
-      //   path: "admin",
-      //   component: RestaurantAdmin,
-      //   meta: { requiresAuth: true },
-      // },
+      {
+        path: "admin",
+        component: AdminDashboard,
+        meta: { requiresAuth: true },
+      },
     ],
   },
 
