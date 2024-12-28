@@ -14,7 +14,6 @@
 
     <!-- Main Content -->
     <main>
-      <!-- Pass restaurantData to child routes via slot -->
       <slot :restaurantData="restaurantData" />
       <router-view :restaurantData="restaurantData" />
     </main>

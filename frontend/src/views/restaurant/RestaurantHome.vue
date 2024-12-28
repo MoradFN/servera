@@ -15,18 +15,17 @@
   </div>
 </template>
 
-<script>
-export default {
-  props: {
-    restaurantData: {
-      type: Object,
-      required: true,
-    },
+<script setup>
+import { computed } from "vue";
+
+// Define props
+const props = defineProps({
+  restaurantData: {
+    type: Object,
+    required: true,
   },
-  computed: {
-    homePage() {
-      return this.restaurantData?.home || [];
-    },
-  },
-};
+});
+
+// Compute the "home" page data
+const homePage = computed(() => props.restaurantData?.home || []);
 </script>
