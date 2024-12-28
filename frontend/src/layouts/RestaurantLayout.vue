@@ -14,9 +14,8 @@
 
     <!-- Main Content -->
     <main>
-      <slot />
-      <router-view />
-      <!-- Render child routes dynamically -->
+      <slot :restaurantData="restaurantData" />
+      <router-view :restaurantData="restaurantData" />
     </main>
 
     <!-- Footer -->
