@@ -16,19 +16,17 @@
 </template>
 
 <script>
-import { useRestaurantStore } from "@/stores/restaurantStore";
-import { computed } from "vue";
-
 export default {
-  setup() {
-    const store = useRestaurantStore();
-
-    // Computed property for the "home" page data
-    const homePage = computed(() => store.restaurantData?.home || []);
-
-    return {
-      homePage,
-    };
+  props: {
+    restaurantData: {
+      type: Object,
+      required: true,
+    },
+  },
+  computed: {
+    homePage() {
+      return this.restaurantData?.home || [];
+    },
   },
 };
 </script>
