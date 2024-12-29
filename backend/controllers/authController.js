@@ -54,16 +54,50 @@ export async function logout(req, res, next) {
   }
 }
 
+// Check Authentication
 export const checkAuth = (req, res) => {
   if (req.user) {
     res.status(200).json({
       success: true,
       user: req.user,
+      message: "Authenticated successfully.",
     });
   } else {
     res.status(401).json({
       success: false,
       message: "Unauthorized",
+    });
+  }
+};
+
+// Check Ownership
+export const checkOwnership = (req, res) => {
+  if (req.restaurant) {
+    res.status(200).json({
+      success: true,
+      isOwner: true,
+      message: "You are the owner of this restaurant.",
+    });
+  } else {
+    res.status(403).json({
+      success: false,
+      message: "You do not have ownership of this restaurant.",
+    });
+  }
+};
+
+// Check Subscription Status
+export const checkSubscriptionStatus = (req, res) => {
+  if (req.subscription) {
+    res.status(200).json({
+      success: true,
+      hasActiveSubscription: true,
+      message: "You have an active subscription.",
+    });
+  } else {
+    res.status(403).json({
+      success: false,
+      message: "You do not have an active subscription.",
     });
   }
 };
