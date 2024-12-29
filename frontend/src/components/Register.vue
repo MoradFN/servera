@@ -17,27 +17,40 @@ const fullSlug = computed(() => {
 
 const handleSubmit = async (e) => {
   e.preventDefault();
+  error.value = null; // Clear previous error messages
 
   try {
     const response = await axios.post(
       "http://localhost:8083/api/auth/register",
       {
         slug: slug.value,
-        name: restaurantName.value, // Match the correct field name
+        name: restaurantName.value,
         email: email.value,
         password: password.value,
-        confirmPassword: confirmPassword.value, // Optional, depending on your backend
+        confirmPassword: confirmPassword.value,
       }
     );
 
-    if (response.status === 200) {
+    // Check for success response
+    if (response.data.success) {
       router.push("/login");
     } else {
-      error.value = "Something went wrong";
+      // Fallback if success is false
+      error.value = response.data.message || "Something went wrong";
     }
   } catch (err) {
-    console.error(err);
-    error.value = "An error occurred during registration.";
+    // Handle error response from the backend
+    if (err.response && err.response.data) {
+      // Extract backend error details
+      const backendError =
+        err.response.data.details || err.response.data.message;
+      error.value = backendError || "An error occurred during registration.";
+    } else {
+      // Handle other errors (e.g., network issues)
+      error.value = "A network error occurred. Please try again later.";
+    }
+
+    console.error("Registration Error:", err);
   }
 };
 </script>
