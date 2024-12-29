@@ -11,9 +11,14 @@
     <!-- Hero Section -->
     <section class="hero">
       <slot name="hero">
-        <h1>
-          {{ restaurantData?.home?.[0]?.content || "Welcome, create a page!" }}
+        <!-- Conditional rendering for the hero -->
+        <h1 v-if="restaurantData?.home?.[0]?.content">
+          {{ restaurantData.home[0].content }}
         </h1>
+        <p v-else-if="isOwner" class="owner-message">
+          This page has not been created yet. Please create it first.
+        </p>
+        <p v-else class="not-found">404 - Page does not exist.</p>
       </slot>
     </section>
 
