@@ -3,21 +3,31 @@ import { computed } from "vue";
 import { useAuthStore } from "@/stores/authStore";
 import { useRoute } from "vue-router";
 
-// Define props to accept restaurant data
+// Define props to accept dynamic data
 const props = defineProps({
   restaurantData: {
     type: Object,
     required: true,
   },
+  isAuthenticated: {
+    type: Boolean,
+    required: true,
+  },
+  isOwner: {
+    type: Boolean,
+    required: true,
+  },
+  hasSubscription: {
+    type: Boolean,
+    required: true,
+  },
 });
 
+// Extract slug from the route
 const route = useRoute();
-const authStore = useAuthStore();
-
-// Extract slug
 const slug = route.params.slug;
 
-// Define available pages dynamically
+// Define available pages dynamically based on restaurant data
 const availablePages = computed(() => {
   const pages = [];
   if (props.restaurantData?.home) {
@@ -32,13 +42,8 @@ const availablePages = computed(() => {
   return pages;
 });
 
-// Determine active link
+// Determine the active link for styling
 const isActiveLink = (routePath) => route.path === routePath;
-
-// Check if the user owns this restaurant
-const isOwner = computed(
-  () => authStore.user?.id === props.restaurantData?.ownerId
-);
 </script>
 
 <template>
@@ -49,11 +54,14 @@ const isOwner = computed(
         {{ page.name }}
       </router-link>
     </div>
-
     <!-- Owner Links (if user is logged in and owns the restaurant) -->
-    <li v-if="isOwner">
-      <router-link :to="{ path: `/${slug}/admin` }">Dashboard</router-link>
-    </li>
+    <router-link
+      v-if="isOwner"
+      :to="{ path: `/${slug}/admin` }"
+      class="dashboard-link"
+    >
+      Dashboard
+    </router-link>
   </nav>
 </template>
 
