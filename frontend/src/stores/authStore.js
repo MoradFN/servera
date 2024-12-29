@@ -1,10 +1,16 @@
 import { defineStore } from "pinia";
-import { isAuthenticated } from "@/services/authService";
+import {
+  isAuthenticated,
+  isOwner,
+  hasActiveSubscription,
+} from "@/services/authService";
 
 export const useAuthStore = defineStore("auth", {
   state: () => ({
     user: null, // Holds authenticated user data
     isAuthenticated: false, // Boolean to track auth status
+    isOwner: false, // Tracks ownership of the current slug
+    hasSubscription: false, // Tracks subscription status
   }),
 
   actions: {
@@ -23,9 +29,41 @@ export const useAuthStore = defineStore("auth", {
       }
     },
 
+    async checkOwnership(slug) {
+      if (!this.isAuthenticated) {
+        console.warn("User not authenticated. Cannot check ownership.");
+        return false;
+      }
+      try {
+        this.isOwner = await isOwner(slug);
+        return this.isOwner;
+      } catch (error) {
+        console.error("Ownership check failed:", error);
+        this.isOwner = false;
+        return false;
+      }
+    },
+
+    async checkSubscription() {
+      if (!this.isAuthenticated) {
+        console.warn("User not authenticated. Cannot check subscription.");
+        return false;
+      }
+      try {
+        this.hasSubscription = await hasActiveSubscription();
+        return this.hasSubscription;
+      } catch (error) {
+        console.error("Subscription check failed:", error);
+        this.hasSubscription = false;
+        return false;
+      }
+    },
+
     resetAuth() {
       this.user = null;
       this.isAuthenticated = false;
+      this.isOwner = false;
+      this.hasSubscription = false;
     },
   },
 });
