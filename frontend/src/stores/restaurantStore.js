@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import axios from "@/services/axios";
+import { createPage } from "@/services/pageServices";
 
 export const useRestaurantStore = defineStore("restaurant", {
   state: () => ({
@@ -90,6 +91,19 @@ export const useRestaurantStore = defineStore("restaurant", {
         this.restaurantData = {};
         this.currentSlug = null;
         throw new Error("Failed to fetch restaurant data");
+      }
+    },
+
+    async createPage(slug, pageData) {
+      try {
+        const response = await createPage(slug, pageData);
+        if (response.success) {
+          this.restaurantData[pageData.name] = { sections: pageData.sections };
+        }
+        return response;
+      } catch (error) {
+        console.error("Failed to create page:", error.message);
+        throw error;
       }
     },
 
