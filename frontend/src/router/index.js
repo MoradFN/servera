@@ -120,8 +120,10 @@ router.beforeEach(async (to, from, next) => {
       try {
         await restaurantStore.fetchRestaurantData(to.params.slug);
       } catch (error) {
-        console.warn("Failed to fetch restaurant data. Redirecting to home.");
-        return next("/");
+        console.warn(
+          `Restaurant data for slug '${to.params.slug}' not found. Proceeding without data.`
+        );
+        // Continue without blocking navigation
       }
     }
 
