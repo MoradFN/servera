@@ -1,46 +1,30 @@
 <template>
-  <div class="dashboard">
-    <h1>Admin Dashboard</h1>
-    <p>Manage your restaurant's pages below:</p>
-    <div class="actions">
-      <router-link :to="{ name: 'EditPage', params: { slug, page: 'home' } }">
-        Manage Home Page
-      </router-link>
-      <router-link :to="{ name: 'EditPage', params: { slug, page: 'about' } }">
-        Manage About Page
-      </router-link>
-      <router-link :to="{ name: 'EditPage', params: { slug, page: 'menu' } }">
-        Manage Menu Page
-      </router-link>
-    </div>
+  <div>
+    <h1>Create Pages</h1>
+    <form @submit.prevent="createPage">
+      <label>
+        Page Name:
+        <input v-model="pageName" />
+      </label>
+      <button type="submit">Create Page</button>
+    </form>
   </div>
 </template>
 
-<script setup>
-import { useRoute } from "vue-router";
+<script>
+import { useRestaurantStore } from "@/stores/restaurantStore";
 
-// Extract the restaurant slug
-const route = useRoute();
-const slug = route.params.slug;
+export default {
+  data() {
+    return {
+      pageName: "",
+    };
+  },
+  methods: {
+    async createPage() {
+      const store = useRestaurantStore();
+      await store.createPage(this.$route.params.slug, this.pageName);
+    },
+  },
+};
 </script>
-
-<style scoped>
-.dashboard {
-  padding: 2rem;
-}
-
-.actions {
-  margin-top: 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-a {
-  text-decoration: none;
-  padding: 0.5rem 1rem;
-  background-color: #007bff;
-  color: white;
-  border-radius: 4px;
-}
-</style>
