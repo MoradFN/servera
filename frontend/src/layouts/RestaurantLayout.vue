@@ -1,8 +1,11 @@
 <template>
   <div class="restaurant-layout">
-    <!-- Navigation Bar -->
-    <NavBar
-      :restaurantName="restaurantData?.home[0]?.content || 'Restaurant'"
+    <!-- Pass restaurant data and auth info to NavBar -->
+    <RestaurantNavBar
+      :restaurantData="restaurantData"
+      :isAuthenticated="isAuthenticated"
+      :isOwner="isOwner"
+      :hasSubscription="hasSubscription"
     />
 
     <!-- Hero Section -->
@@ -24,31 +27,47 @@
 </template>
 
 <script>
-import NavBar from "@/components/NavBar.vue";
 import Footer from "@/components/Footer.vue";
+import RestaurantNavBar from "@/components/restaurant/RestaurantNavBar.vue";
 import { useRestaurantStore } from "@/stores/restaurantStore";
+import { useAuthStore } from "@/stores/authStore";
 import { computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
 
 export default {
-  components: { NavBar, Footer },
+  components: { RestaurantNavBar, Footer },
   setup() {
     const route = useRoute();
     const restaurantStore = useRestaurantStore();
+    const authStore = useAuthStore();
     const slug = computed(() => route.params.slug);
 
-    // Fetch restaurant data when the component is mounted
+    // Computed properties for auth statuses
+    const isAuthenticated = computed(() => authStore.isAuthenticated);
+    const isOwner = computed(() => authStore.isOwner);
+    const hasSubscription = computed(() => authStore.hasSubscription);
+
+    // Fetch required data on mount
     onMounted(async () => {
       try {
+        // Fetch restaurant data
         await restaurantStore.fetchRestaurantData(slug.value);
+
+        // Check auth statuses
+        await authStore.fetchAuthStatus();
+        await authStore.checkOwnership(slug.value);
+        await authStore.checkSubscription();
       } catch (error) {
-        console.error("Failed to fetch restaurant data:", error.message);
+        console.error("Error initializing layout:", error.message);
       }
     });
 
     return {
       slug,
       restaurantData: restaurantStore.restaurantData,
+      isAuthenticated,
+      isOwner,
+      hasSubscription,
     };
   },
 };

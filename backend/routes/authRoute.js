@@ -1,5 +1,7 @@
 import express from "express";
 import {
+  checkOwnership,
+  checkSubscriptionStatus,
   loginRestaurant,
   logout,
   registerRestaurant,
@@ -10,7 +12,11 @@ import {
 } from "../validators/authValidators.js";
 import { runValidations } from "../middleware/validationMiddleware.js";
 
-import { verifyJWT } from "../middleware/authMiddleware.js";
+import {
+  requireActiveSubscription,
+  verifyJWT,
+  verifyOwnership,
+} from "../middleware/authMiddleware.js";
 import { checkAuth } from "../controllers/authController.js";
 
 const router = express.Router();
@@ -25,6 +31,17 @@ router.post("/logout", logout);
 
 // Protected route to check if logged in
 router.get("/is-authenticated", verifyJWT, checkAuth);
+
+// Protected route to check ownership
+router.get("/:slug/is-owner", verifyJWT, verifyOwnership, checkOwnership);
+
+// Protected route to check subscription status
+router.get(
+  "/subscription-status",
+  verifyJWT,
+  requireActiveSubscription,
+  checkSubscriptionStatus
+);
 
 export default router;
 
