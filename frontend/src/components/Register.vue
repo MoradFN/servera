@@ -1,15 +1,16 @@
 <script setup>
+import { useToast } from "vue-toastification";
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
 
+const toast = useToast();
 const router = useRouter();
 const slug = ref("");
 const restaurantName = ref("");
 const email = ref("");
 const password = ref("");
 const confirmPassword = ref("");
-const error = ref(null);
 
 const fullSlug = computed(() => {
   return `www.servera.com/${slug.value.toLowerCase()}`;
@@ -17,7 +18,6 @@ const fullSlug = computed(() => {
 
 const handleSubmit = async (e) => {
   e.preventDefault();
-  error.value = null; // Clear previous error messages
 
   try {
     const response = await axios.post(
@@ -31,22 +31,25 @@ const handleSubmit = async (e) => {
       }
     );
 
-    // Check for success response
+    // Handle success response
     if (response.data.success) {
+      toast.success("Registration successful! Redirecting to login...");
       router.push("/login");
     } else {
       // Fallback if success is false
-      error.value = response.data.message || "Something went wrong";
+      toast.error(response.data.message || "Something went wrong");
     }
   } catch (err) {
     // Handle error response from the backend
     if (err.response && err.response.data) {
       const backendErrors = err.response.data.errors || [];
-      // Map backend error messages into a single string or array
-      error.value = backendErrors.map((err) => err.message).join(", ");
+      // Display each error as a toast notification
+      backendErrors.forEach((error) => {
+        toast.error(error.message);
+      });
     } else {
       // Handle other errors (e.g., network issues)
-      error.value = "A network error occurred. Please try again later.";
+      toast.error("A network error occurred. Please try again later.");
     }
 
     console.error("Registration Error:", err);
@@ -81,7 +84,6 @@ const handleSubmit = async (e) => {
       </label>
       <button type="submit" class="submit-button">Sign up</button>
     </form>
-    <p v-if="error" class="error-message">{{ error }}</p>
     <p class="alternative-option">or</p>
     <router-link to="/login" class="login-link">Log in</router-link>
   </div>
