@@ -52,7 +52,7 @@ const isOwner = computed(
 
     <!-- Owner Links (if user is logged in and owns the restaurant) -->
     <li v-if="isOwner">
-      <router-link :to="{ path: `/${slug}/admin` }">Manage Home</router-link>
+      <router-link :to="{ path: `/${slug}/admin` }">Dashboard</router-link>
     </li>
   </nav>
 </template>
