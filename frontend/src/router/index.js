@@ -108,25 +108,40 @@ router.beforeEach(async (to, from, next) => {
   try {
     // Check authentication if required
     if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-      await authStore.fetchAuthStatus(); // Fetch auth data only once
+      await authStore.fetchAuthStatus();
       if (!authStore.isAuthenticated) {
-        return next("/login"); // Redirect if not authenticated
+        console.warn("User not authenticated.");
+        return next("/login");
       }
     }
 
-    // Pre-fetch restaurant data if route has a slug
+    // Pre-fetch restaurant data if the route has a slug
     if (to.params.slug && !restaurantStore.isDataCached(to.params.slug)) {
-      await restaurantStore.fetchRestaurantData(to.params.slug); // Preload restaurant
+      try {
+        await restaurantStore.fetchRestaurantData(to.params.slug);
+      } catch (error) {
+        console.warn("Failed to fetch restaurant data. Redirecting to home.");
+        return next("/");
+      }
     }
 
     // Check ownership if required
     if (to.meta.requiresOwner) {
-      const isOwner = await authStore.checkOwnership(to.params.slug); // Check if user owns the restaurant
+      const isOwner = await authStore.checkOwnership(to.params.slug);
       if (!isOwner) {
         console.warn(
           "Access denied: User is not the owner of this restaurant."
         );
-        return next("/"); // Redirect to home or an appropriate fallback page
+        return next("/");
+      }
+    }
+
+    // Check subscription if required
+    if (to.meta.requiresSubscription) {
+      const hasSubscription = await authStore.checkSubscription();
+      if (!hasSubscription) {
+        console.warn("Access denied: No active subscription.");
+        return next("/subscribe");
       }
     }
 

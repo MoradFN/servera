@@ -1,30 +1,51 @@
 <template>
   <div>
-    <h1>Create Pages</h1>
-    <form @submit.prevent="createPage">
-      <label>
-        Page Name:
-        <input v-model="pageName" />
-      </label>
-      <button type="submit">Create Page</button>
-    </form>
+    <h1>Admin Dashboard</h1>
+    <p v-if="isLoading">Loading data...</p>
+    <p v-else-if="!hasData">No pages available. Create your first page!</p>
+    <ul v-else>
+      <li v-for="(page, index) in pages" :key="index">
+        {{ page.name }}
+      </li>
+    </ul>
+    <button @click="createPage">Create Page</button>
   </div>
 </template>
 
 <script>
 import { useRestaurantStore } from "@/stores/restaurantStore";
+import { computed, onMounted, ref } from "vue";
 
 export default {
-  data() {
-    return {
-      pageName: "",
+  setup() {
+    const restaurantStore = useRestaurantStore();
+    const isLoading = ref(true);
+
+    const pages = computed(() => Object.keys(restaurantStore.restaurantData));
+    const hasData = computed(() => pages.value.length > 0);
+
+    const createPage = async () => {
+      try {
+        await restaurantStore.createPage("home", "Home");
+      } catch (error) {
+        console.error("Failed to create page:", error.message);
+      }
     };
-  },
-  methods: {
-    async createPage() {
-      const store = useRestaurantStore();
-      await store.createPage(this.$route.params.slug, this.pageName);
-    },
+
+    // Ensure data is fetched on mount
+    onMounted(async () => {
+      try {
+        if (!restaurantStore.currentSlug) {
+          console.warn("No slug found. Unable to fetch restaurant data.");
+        }
+        isLoading.value = false; // Data is fetched or an error has occurred
+      } catch (error) {
+        console.error("Failed to fetch restaurant data:", error.message);
+        isLoading.value = false; // Data loading completed, even if it failed
+      }
+    });
+
+    return { pages, hasData, createPage, isLoading };
   },
 };
 </script>

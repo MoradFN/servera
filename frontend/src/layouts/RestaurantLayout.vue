@@ -11,7 +11,9 @@
     <!-- Hero Section -->
     <section class="hero">
       <slot name="hero">
-        <h1>{{ restaurantData?.home[0]?.content || "Welcome!" }}</h1>
+        <h1>
+          {{ restaurantData?.home?.[0]?.content || "Welcome, create a page!" }}
+        </h1>
       </slot>
     </section>
 
