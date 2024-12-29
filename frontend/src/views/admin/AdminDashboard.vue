@@ -56,7 +56,7 @@
         <p>No pages available. Create your first page above.</p>
       </div>
       <div v-else>
-        <p>Existing Pages:</p>
+        <p>Befintliga sidor:</p>
         <ul>
           <li v-for="(page, index) in pages" :key="index">{{ page }}</li>
         </ul>
