@@ -73,7 +73,7 @@ const routes = [
       {
         path: "admin",
         component: AdminDashboard,
-        meta: { requiresAuth: true },
+        meta: { requiresAuth: true, requiresOwner: true },
       },
     ],
   },
@@ -105,20 +105,53 @@ router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
   const restaurantStore = useRestaurantStore();
 
-  // Check authentication if required
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    await authStore.fetchAuthStatus(); // Fetch auth data only once
-    if (!authStore.isAuthenticated) {
-      return next("/login"); // Redirect if not authenticated
+  try {
+    // Check authentication if required
+    if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+      await authStore.fetchAuthStatus();
+      if (!authStore.isAuthenticated) {
+        console.warn("User not authenticated.");
+        return next("/login");
+      }
     }
-  }
 
-  // Pre-fetch restaurant data if route has a slug
-  if (to.params.slug && !restaurantStore.isDataCached(to.params.slug)) {
-    await restaurantStore.fetchRestaurantData(to.params.slug); // Preload restaurant
-  }
+    // Pre-fetch restaurant data if the route has a slug
+    if (to.params.slug && !restaurantStore.isDataCached(to.params.slug)) {
+      try {
+        await restaurantStore.fetchRestaurantData(to.params.slug);
+      } catch (error) {
+        console.warn(
+          `Restaurant data for slug '${to.params.slug}' not found. Proceeding without data.`
+        );
+        // Continue without blocking navigation
+      }
+    }
 
-  next(); // Allow navigation if all checks pass
+    // Check ownership if required
+    if (to.meta.requiresOwner) {
+      const isOwner = await authStore.checkOwnership(to.params.slug);
+      if (!isOwner) {
+        console.warn(
+          "Access denied: User is not the owner of this restaurant."
+        );
+        return next("/");
+      }
+    }
+
+    // Check subscription if required
+    if (to.meta.requiresSubscription) {
+      const hasSubscription = await authStore.checkSubscription();
+      if (!hasSubscription) {
+        console.warn("Access denied: No active subscription.");
+        return next("/subscribe");
+      }
+    }
+
+    next(); // Allow navigation if all checks pass
+  } catch (error) {
+    console.error("Navigation error:", error);
+    next("/"); // Redirect to a safe fallback on error
+  }
 });
 
 export default router;

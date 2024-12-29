@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import axios from "@/services/axios";
+import { createPage } from "@/services/pageServices";
 
 export const useRestaurantStore = defineStore("restaurant", {
   state: () => ({
@@ -40,16 +41,27 @@ export const useRestaurantStore = defineStore("restaurant", {
             const pageData = result.value.data.data;
 
             if (pageName === "menu") {
-              // Handle menu data structure
-              this.restaurantData[pageName] = {
-                sections: pageData.sections || [],
-                categories: pageData.categories || [],
-                items:
-                  pageData.items?.map((item) => ({
-                    ...item,
-                    ingredients: item.ingredients || [], // Handle ingredients
-                  })) || [],
-              };
+              // Check if menu data has meaningful content
+              const hasMenuContent =
+                (pageData.sections && pageData.sections.length > 0) ||
+                (pageData.categories && pageData.categories.length > 0) ||
+                (pageData.items && pageData.items.length > 0);
+
+              if (hasMenuContent) {
+                this.restaurantData[pageName] = {
+                  sections: pageData.sections || [],
+                  categories: pageData.categories || [],
+                  items:
+                    pageData.items?.map((item) => ({
+                      ...item,
+                      ingredients: item.ingredients || [], // Handle ingredients
+                    })) || [],
+                };
+              } else {
+                console.warn(
+                  `⚠️ Page '${pageName}' is empty and will not be added.`
+                );
+              }
             } else {
               // Handle non-menu pages
               this.restaurantData[pageName] = pageData;
@@ -79,6 +91,19 @@ export const useRestaurantStore = defineStore("restaurant", {
         this.restaurantData = {};
         this.currentSlug = null;
         throw new Error("Failed to fetch restaurant data");
+      }
+    },
+
+    async createPage(slug, pageData) {
+      try {
+        const response = await createPage(slug, pageData);
+        if (response.success) {
+          this.restaurantData[pageData.name] = { sections: pageData.sections };
+        }
+        return response;
+      } catch (error) {
+        console.error("Failed to create page:", error.message);
+        throw error;
       }
     },
 
