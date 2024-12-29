@@ -41,10 +41,9 @@ const handleSubmit = async (e) => {
   } catch (err) {
     // Handle error response from the backend
     if (err.response && err.response.data) {
-      // Extract backend error details
-      const backendError =
-        err.response.data.details || err.response.data.message;
-      error.value = backendError || "An error occurred during registration.";
+      const backendErrors = err.response.data.errors || [];
+      // Map backend error messages into a single string or array
+      error.value = backendErrors.map((err) => err.message).join(", ");
     } else {
       // Handle other errors (e.g., network issues)
       error.value = "A network error occurred. Please try again later.";
