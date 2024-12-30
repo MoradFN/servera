@@ -25,9 +25,10 @@ const handleSubmit = async (e) => {
       }
     );
 
-    if (response.status === 200) {
+    if (response.status === 200 && response.data.success) {
+      const slug = response.data.data.restaurant.slug;
       toast.success("Login successful");
-      router.push("/"); //MTTODO: Redirect to SLUG after login?
+      router.push(`/${slug}/admin`);
     } else {
       toast.error("Something went wrong");
       error.value = "Something went wrong";
