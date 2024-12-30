@@ -1,9 +1,12 @@
 <template>
   <div class="restaurant-layout">
     <!-- Subscription Notification -->
-    <div v-if="!hasSubscription" class="subscription-notification">
+    <div
+      v-if="isAuthenticated && isOwner && !hasSubscription"
+      class="subscription-notification"
+    >
       <p>
-        You are not subscribed.
+        Subscribe to unlock premium features and manage your restaurant
         <button @click="redirectToSubscribe" class="subscribe-button">
           Subscribe Now
         </button>
