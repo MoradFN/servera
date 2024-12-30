@@ -43,7 +43,11 @@
 
     <main>
       <slot :restaurantData="restaurantData" :pageStatus="pageStatus" />
-      <router-view :restaurantData="restaurantData" :pageStatus="pageStatus" />
+      <router-view
+        :restaurantData="restaurantData"
+        :pageStatus="pageStatus"
+        :isOwner="isOwner"
+      />
     </main>
 
     <Footer />
