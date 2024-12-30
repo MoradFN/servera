@@ -7,13 +7,12 @@
     >
       <p>
         Subscribe to unlock premium features and manage your restaurant
-        <button @click="redirectToSubscribe" class="subscribe-button">
+        <button @click="router.push('/subscribe')" class="subscribe-button">
           Subscribe Now
         </button>
       </p>
     </div>
 
-    <!-- Pass restaurant data and auth info to NavBar -->
     <RestaurantNavBar
       :restaurantData="restaurantData"
       :isAuthenticated="isAuthenticated"
@@ -21,31 +20,35 @@
       :hasSubscription="hasSubscription"
     />
 
-    <!-- Hero Section -->
+    <!-- Example: Hero for 'home' page -->
     <section class="hero">
-      <slot name="hero">
-        <!-- Conditional rendering for the hero -->
-        <h1 v-if="restaurantData?.home?.[0]?.content">
-          {{ restaurantData.home[0].content }}
-        </h1>
-        <p v-else-if="isOwner" class="owner-message">
-          This page has not been created yet. Please create it first.
+      <div v-if="pageStatus.home === 'found'">
+        <!-- If the home page is found, display it -->
+        <slot name="hero">
+          <h1 v-if="restaurantData?.home?.[0]?.content">
+            {{ restaurantData.home[0].content }}
+          </h1>
+        </slot>
+      </div>
+
+      <!-- If 'home' is missing -->
+      <div v-else-if="pageStatus.home === 'missing'">
+        <p v-if="isOwner">
+          No home page yet. You can create it in the Admin Dashboard or inline
+          edit mode.
         </p>
-        <p v-else class="not-found">404 - Page does not exist.</p>
-      </slot>
+        <p v-else>404 - This page does not exist.</p>
+      </div>
     </section>
 
-    <!-- Main Content -->
     <main>
-      <slot :restaurantData="restaurantData" />
-      <router-view :restaurantData="restaurantData" />
+      <slot :restaurantData="restaurantData" :pageStatus="pageStatus" />
+      <router-view :restaurantData="restaurantData" :pageStatus="pageStatus" />
     </main>
 
-    <!-- Footer -->
     <Footer />
   </div>
 </template>
-
 <script>
 import Footer from "@/components/Footer.vue";
 import RestaurantNavBar from "@/components/restaurant/RestaurantNavBar.vue";
@@ -61,25 +64,22 @@ export default {
     const router = useRouter();
     const restaurantStore = useRestaurantStore();
     const authStore = useAuthStore();
-    const slug = computed(() => route.params.slug);
 
-    // Computed properties for auth statuses
+    const slug = computed(() => route.params.slug);
+    const pageStatus = computed(() => restaurantStore.pageStatus);
+
     const isAuthenticated = computed(() => authStore.isAuthenticated);
     const isOwner = computed(() => authStore.isOwner);
     const hasSubscription = computed(() => authStore.hasSubscription);
 
-    // Redirect to subscription page
-    const redirectToSubscribe = () => {
-      router.push("/subscribe");
-    };
+    // For example, show a "Create page" button or 404 fallback
+    function isPageMissing(page) {
+      return pageStatus.value[page] === "missing";
+    }
 
-    // Fetch required data on mount
     onMounted(async () => {
       try {
-        // Fetch restaurant data
         await restaurantStore.fetchRestaurantData(slug.value);
-
-        // Check auth statuses
         await authStore.fetchAuthStatus();
         await authStore.checkOwnership(slug.value);
         await authStore.checkSubscription();
@@ -91,10 +91,12 @@ export default {
     return {
       slug,
       restaurantData: restaurantStore.restaurantData,
+      pageStatus,
       isAuthenticated,
       isOwner,
       hasSubscription,
-      redirectToSubscribe,
+      isPageMissing,
+      router,
     };
   },
 };
