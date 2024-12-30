@@ -10,6 +10,15 @@
       <p v-else>You are not authorized to manage this restaurant.</p>
     </div>
     <div v-else>
+      <p>Pages status:</p>
+      <ul>
+        <li v-for="(status, page) in pageStatus" :key="page">
+          {{ page.toUpperCase() }} - {{ status }}
+          <button v-if="status === 'missing'" @click="createThatPage(page)">
+            Create {{ page }} page
+          </button>
+        </li>
+      </ul>
       <!-- Page Creation Form -->
       <form @submit.prevent="submitPage" class="create-page-form">
         <label for="pageName">Page Name:</label>
@@ -50,17 +59,6 @@
       <p v-if="message" :class="{ success: isSuccess, error: !isSuccess }">
         {{ message }}
       </p>
-
-      <!-- Existing Pages -->
-      <div v-if="!hasPages">
-        <p>No pages available. Create your first page above.</p>
-      </div>
-      <div v-else>
-        <p>Befintliga sidor:</p>
-        <ul>
-          <li v-for="(page, index) in pages" :key="index">{{ page }}</li>
-        </ul>
-      </div>
     </div>
   </div>
 </template>
@@ -87,12 +85,7 @@ export default {
     // Computed Properties
     const isAuthenticated = computed(() => authStore.isAuthenticated);
     const isOwner = computed(() => authStore.isOwner);
-    const pages = computed(() =>
-      Object.keys(restaurantStore.restaurantData).map(
-        (key) => `${key.charAt(0).toUpperCase()}${key.slice(1)}`
-      )
-    );
-    const hasPages = computed(() => pages.value.length > 0);
+    const pageStatus = computed(() => restaurantStore.pageStatus);
 
     // Add a new section
     const addSection = () => {
@@ -168,8 +161,7 @@ export default {
       submitPage,
       message,
       isSuccess,
-      pages,
-      hasPages,
+      pageStatus,
       isAuthenticated,
       isOwner,
       loading,

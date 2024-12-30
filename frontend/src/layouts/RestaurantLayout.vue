@@ -1,6 +1,18 @@
 <template>
   <div class="restaurant-layout">
-    <!-- Pass restaurant data and auth info to NavBar -->
+    <!-- Subscription Notification -->
+    <div
+      v-if="isAuthenticated && isOwner && !hasSubscription"
+      class="subscription-notification"
+    >
+      <p>
+        Subscribe to unlock premium features and manage your restaurant
+        <button @click="router.push('/subscribe')" class="subscribe-button">
+          Subscribe Now
+        </button>
+      </p>
+    </div>
+
     <RestaurantNavBar
       :restaurantData="restaurantData"
       :isAuthenticated="isAuthenticated"
@@ -8,59 +20,70 @@
       :hasSubscription="hasSubscription"
     />
 
-    <!-- Hero Section -->
+    <!-- Example: Hero for 'home' page -->
     <section class="hero">
-      <slot name="hero">
-        <!-- Conditional rendering for the hero -->
-        <h1 v-if="restaurantData?.home?.[0]?.content">
-          {{ restaurantData.home[0].content }}
-        </h1>
-        <p v-else-if="isOwner" class="owner-message">
-          This page has not been created yet. Please create it first.
+      <div v-if="pageStatus.home === 'found'">
+        <!-- If the home page is found, display it -->
+        <slot name="hero">
+          <h1 v-if="restaurantData?.home?.[0]?.content">
+            {{ restaurantData.home[0].content }}
+          </h1>
+        </slot>
+      </div>
+
+      <!-- If 'home' is missing -->
+      <div v-else-if="pageStatus.home === 'missing'">
+        <p v-if="isOwner">
+          No home page yet. You can create it in the Admin Dashboard or inline
+          edit mode.
         </p>
-        <p v-else class="not-found">404 - Page does not exist.</p>
-      </slot>
+        <p v-else>404 - This page does not exist.</p>
+      </div>
     </section>
 
-    <!-- Main Content -->
     <main>
-      <slot :restaurantData="restaurantData" />
-      <router-view :restaurantData="restaurantData" />
+      <slot :restaurantData="restaurantData" :pageStatus="pageStatus" />
+      <router-view
+        :restaurantData="restaurantData"
+        :pageStatus="pageStatus"
+        :isOwner="isOwner"
+      />
     </main>
 
-    <!-- Footer -->
     <Footer />
   </div>
 </template>
-
 <script>
 import Footer from "@/components/Footer.vue";
 import RestaurantNavBar from "@/components/restaurant/RestaurantNavBar.vue";
 import { useRestaurantStore } from "@/stores/restaurantStore";
 import { useAuthStore } from "@/stores/authStore";
 import { computed, onMounted } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 export default {
   components: { RestaurantNavBar, Footer },
   setup() {
     const route = useRoute();
+    const router = useRouter();
     const restaurantStore = useRestaurantStore();
     const authStore = useAuthStore();
-    const slug = computed(() => route.params.slug);
 
-    // Computed properties for auth statuses
+    const slug = computed(() => route.params.slug);
+    const pageStatus = computed(() => restaurantStore.pageStatus);
+
     const isAuthenticated = computed(() => authStore.isAuthenticated);
     const isOwner = computed(() => authStore.isOwner);
     const hasSubscription = computed(() => authStore.hasSubscription);
 
-    // Fetch required data on mount
+    // For example, show a "Create page" button or 404 fallback
+    function isPageMissing(page) {
+      return pageStatus.value[page] === "missing";
+    }
+
     onMounted(async () => {
       try {
-        // Fetch restaurant data
         await restaurantStore.fetchRestaurantData(slug.value);
-
-        // Check auth statuses
         await authStore.fetchAuthStatus();
         await authStore.checkOwnership(slug.value);
         await authStore.checkSubscription();
@@ -72,15 +95,40 @@ export default {
     return {
       slug,
       restaurantData: restaurantStore.restaurantData,
+      pageStatus,
       isAuthenticated,
       isOwner,
       hasSubscription,
+      isPageMissing,
+      router,
     };
   },
 };
 </script>
 
 <style scoped>
+.subscription-notification {
+  background-color: #ffcc00;
+  color: #000;
+  text-align: center;
+  padding: 10px;
+  font-size: 1rem;
+}
+
+.subscribe-button {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 5px 10px;
+  margin-left: 10px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.subscribe-button:hover {
+  background-color: #0056b3;
+}
+
 .restaurant-layout {
   display: flex;
   flex-direction: column;

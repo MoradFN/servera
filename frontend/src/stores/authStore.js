@@ -43,7 +43,14 @@ export const useAuthStore = defineStore("auth", {
         return false;
       }
     },
-
+    async refreshSubscriptionStatus() {
+      try {
+        this.hasSubscription = await hasActiveSubscription();
+      } catch (error) {
+        console.error("Failed to refresh subscription status:", error);
+        this.hasSubscription = false;
+      }
+    },
     async checkSubscription() {
       if (!this.isAuthenticated) {
         console.warn("User not authenticated. Cannot check subscription.");

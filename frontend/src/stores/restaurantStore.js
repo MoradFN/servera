@@ -4,101 +4,119 @@ import { createPage } from "@/services/pageServices";
 
 export const useRestaurantStore = defineStore("restaurant", {
   state: () => ({
-    restaurantData: {}, // Holds data for all pages
-    currentSlug: null, // Tracks current restaurant slug
+    restaurantData: {}, // Holds actual data per page if found
+    pageStatus: {}, // Tracks 'found' or 'missing' for each page
+    currentSlug: null, // Current restaurant slug
   }),
 
   actions: {
-    // Check if data is already cached
     isDataCached(slug) {
       return (
         this.currentSlug === slug && Object.keys(this.restaurantData).length > 0
       );
     },
 
-    // Fetch all restaurant pages (home, about, menu)
     async fetchRestaurantData(slug) {
+      // If already cached, skip
       if (this.isDataCached(slug)) {
         console.log(`✅ Data already cached for ${slug}. Skipping fetch.`);
-        return this.restaurantData; // Return cached data
+        return this.restaurantData;
       }
 
-      try {
-        console.log(`🔄 Fetching available pages for ${slug}...`);
+      console.log(`🔄 Fetching available pages for ${slug}...`);
 
-        // Define pages to fetch
-        const pages = ["home", "about", "menu"];
+      // Optionally, validate that the restaurant slug itself is valid
+      // before fetching pages. Example:
+      // const { data } = await axios.get(`/restaurants/${slug}/exists`);
+      // if (!data.success) {
+      //   throw new Error(`Restaurant slug '${slug}' does not exist.`);
+      // }
 
-        // Use Promise.allSettled to handle partial success
-        const results = await Promise.allSettled(
-          pages.map((page) => axios.get(`/pages/${slug}/${page}`))
-        );
+      // Define pages to fetch
+      const pages = ["home", "about", "menu"];
+      // Initialize pageStatus so we know which pages are missing vs. found
+      this.pageStatus = pages.reduce((acc, p) => {
+        acc[p] = "missing";
+        return acc;
+      }, {});
 
-        // Populate restaurantData only with successful pages
-        results.forEach((result, index) => {
-          if (result.status === "fulfilled" && result.value.data.data) {
-            const pageName = pages[index];
-            const pageData = result.value.data.data;
+      // Use Promise.allSettled to handle partial success
+      const results = await Promise.allSettled(
+        pages.map((page) => axios.get(`/pages/${slug}/${page}`))
+      );
 
-            if (pageName === "menu") {
-              // Check if menu data has meaningful content
-              const hasMenuContent =
-                (pageData.sections && pageData.sections.length > 0) ||
-                (pageData.categories && pageData.categories.length > 0) ||
-                (pageData.items && pageData.items.length > 0);
+      results.forEach((result, index) => {
+        const pageName = pages[index];
 
-              if (hasMenuContent) {
-                this.restaurantData[pageName] = {
-                  sections: pageData.sections || [],
-                  categories: pageData.categories || [],
-                  items:
-                    pageData.items?.map((item) => ({
-                      ...item,
-                      ingredients: item.ingredients || [], // Handle ingredients
-                    })) || [],
-                };
-              } else {
-                console.warn(
-                  `⚠️ Page '${pageName}' is empty and will not be added.`
-                );
-              }
+        if (result.status === "fulfilled" && result.value.data.data) {
+          const pageData = result.value.data.data;
+
+          // If it's the 'menu' page, check for meaningful content
+          if (pageName === "menu") {
+            const hasMenuContent =
+              (pageData.sections && pageData.sections.length > 0) ||
+              (pageData.categories && pageData.categories.length > 0) ||
+              (pageData.items && pageData.items.length > 0);
+
+            if (hasMenuContent) {
+              this.restaurantData[pageName] = {
+                sections: pageData.sections || [],
+                categories: pageData.categories || [],
+                items:
+                  pageData.items?.map((item) => ({
+                    ...item,
+                    ingredients: item.ingredients || [],
+                  })) || [],
+              };
+              this.pageStatus[pageName] = "found";
+              console.log(`✅ Page '${pageName}' loaded successfully.`);
             } else {
-              // Handle non-menu pages
-              this.restaurantData[pageName] = pageData;
+              console.warn(`⚠️ Page '${pageName}' is empty and not included.`);
             }
-
-            console.log(`✅ Page '${pageName}' loaded successfully.`);
           } else {
-            console.warn(
-              `⚠️ Page '${pages[index]}' not found for restaurant '${slug}'.`
-            );
+            // Non-menu pages
+            this.restaurantData[pageName] = pageData;
+            this.pageStatus[pageName] = "found";
+            console.log(`✅ Page '${pageName}' loaded successfully.`);
           }
-        });
-
-        this.currentSlug = slug;
-
-        // Check if at least one page is loaded
-        if (Object.keys(this.restaurantData).length === 0) {
-          throw new Error("No pages found for this restaurant.");
+        } else {
+          // Page not found
+          this.restaurantData[pageName] = null;
+          this.pageStatus[pageName] = "missing";
+          console.warn(
+            `⚠️ Page '${pageName}' not found or empty for restaurant '${slug}'.`
+          );
         }
+      });
 
-        console.log("✅ Fetch complete:", this.restaurantData);
-        return this.restaurantData; // Return available data
-      } catch (error) {
-        console.error("❌ Fetch failed:", error.message);
+      this.currentSlug = slug;
 
-        // Reset state and rethrow error
-        this.restaurantData = {};
-        this.currentSlug = null;
-        throw new Error("Failed to fetch restaurant data");
+      // If absolutely no pages found, consider whether to throw or not
+      const loadedPages = Object.values(this.pageStatus).filter(
+        (status) => status === "found"
+      );
+      if (loadedPages.length === 0) {
+        // If you'd prefer to allow an empty restaurant, just log a warning
+        console.warn(
+          `⚠️ No pages found for slug '${slug}'. Not throwing an error.`
+        );
       }
+
+      console.log("✅ Fetch complete:", {
+        restaurantData: this.restaurantData,
+        pageStatus: this.pageStatus,
+      });
+      return this.restaurantData;
     },
 
+    // Create a new page
     async createPage(slug, pageData) {
       try {
         const response = await createPage(slug, pageData);
         if (response.success) {
+          // Update store with newly created page
           this.restaurantData[pageData.name] = { sections: pageData.sections };
+          this.pageStatus[pageData.name] = "found";
         }
         return response;
       } catch (error) {
@@ -107,9 +125,9 @@ export const useRestaurantStore = defineStore("restaurant", {
       }
     },
 
-    // Reset data (if needed)
     resetStore() {
       this.restaurantData = {};
+      this.pageStatus = {};
       this.currentSlug = null;
     },
   },
