@@ -1,5 +1,15 @@
 <template>
   <div class="restaurant-layout">
+    <!-- Subscription Notification -->
+    <div v-if="!hasSubscription" class="subscription-notification">
+      <p>
+        You are not subscribed.
+        <button @click="redirectToSubscribe" class="subscribe-button">
+          Subscribe Now
+        </button>
+      </p>
+    </div>
+
     <!-- Pass restaurant data and auth info to NavBar -->
     <RestaurantNavBar
       :restaurantData="restaurantData"
@@ -39,12 +49,13 @@ import RestaurantNavBar from "@/components/restaurant/RestaurantNavBar.vue";
 import { useRestaurantStore } from "@/stores/restaurantStore";
 import { useAuthStore } from "@/stores/authStore";
 import { computed, onMounted } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 export default {
   components: { RestaurantNavBar, Footer },
   setup() {
     const route = useRoute();
+    const router = useRouter();
     const restaurantStore = useRestaurantStore();
     const authStore = useAuthStore();
     const slug = computed(() => route.params.slug);
@@ -53,6 +64,11 @@ export default {
     const isAuthenticated = computed(() => authStore.isAuthenticated);
     const isOwner = computed(() => authStore.isOwner);
     const hasSubscription = computed(() => authStore.hasSubscription);
+
+    // Redirect to subscription page
+    const redirectToSubscribe = () => {
+      router.push("/subscribe");
+    };
 
     // Fetch required data on mount
     onMounted(async () => {
@@ -75,12 +91,35 @@ export default {
       isAuthenticated,
       isOwner,
       hasSubscription,
+      redirectToSubscribe,
     };
   },
 };
 </script>
 
 <style scoped>
+.subscription-notification {
+  background-color: #ffcc00;
+  color: #000;
+  text-align: center;
+  padding: 10px;
+  font-size: 1rem;
+}
+
+.subscribe-button {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 5px 10px;
+  margin-left: 10px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.subscribe-button:hover {
+  background-color: #0056b3;
+}
+
 .restaurant-layout {
   display: flex;
   flex-direction: column;
