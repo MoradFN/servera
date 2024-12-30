@@ -1,7 +1,7 @@
 <!-- MTTODO TRANSITION TEST, LÄGG DE NÅN ANNAN STANS. -->
 <script setup>
 import { RouterView, useRoute } from "vue-router";
-import Navbar from "@/components/Navbar.vue";
+import Navbar from "@/components/NavBar.vue";
 import RestaurantNavbar from "@/components/RestaurantNavbar.vue";
 
 const route = useRoute();
