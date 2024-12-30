@@ -29,6 +29,7 @@
 import { onMounted, ref } from "vue";
 import { loadStripe } from "@stripe/stripe-js";
 import { useToast } from "vue-toastification";
+import { useAuthStore } from "@/stores/authStore";
 
 const stripeInstance = ref(null);
 const elements = ref(null);
@@ -70,6 +71,7 @@ onMounted(async () => {
 async function createSubscription() {
   isLoading.value = true;
   errorMessage.value = ""; // Clear previous error
+  const authStore = useAuthStore();
 
   try {
     // Create a PaymentMethod from the card element
@@ -99,6 +101,9 @@ async function createSubscription() {
     const result = await response.json();
 
     if (result.success) {
+      // Update the subscription status in the store
+      await authStore.refreshSubscriptionStatus();
+
       toast.success("Subscription created successfully! 🎉");
     } else {
       throw new Error(result.message || "Subscription failed.");
