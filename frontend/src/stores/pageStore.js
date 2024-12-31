@@ -1,31 +1,30 @@
-import axios from "@/services/axios";
 import { defineStore } from "pinia";
+import axios from "@/services/axios";
 
-export const usePageStore = defineStore("page", {
+export const useSectionStore = defineStore("sections", {
   state: () => ({
-    sections: [],
-    pageName: null,
-    slug: null,
+    sections: [], // Holds sections for a page
+    currentPageName: null, // Tracks the page for the sections
   }),
 
   actions: {
-    // Fetch sections for a specific page
     async fetchSections(slug, pageName) {
       try {
         const response = await axios.get(`/pages/${slug}/${pageName}/sections`);
         if (response.data.success) {
-          this.sections = response.data.data;
-          this.pageName = pageName;
-          this.slug = slug;
-        } else {
-          console.warn("Failed to fetch sections:", response.data.message);
+          this.sections = response.data.data.sections;
+          this.currentPageName = pageName;
+          console.log(`✅ Sections loaded for page '${pageName}'.`);
         }
       } catch (error) {
-        console.error("Error fetching sections:", error.message);
+        console.error(
+          `Failed to fetch sections for '${pageName}':`,
+          error.message
+        );
+        throw error;
       }
     },
 
-    // Update sections for a specific page
     async updateSections(slug, pageName, sections) {
       try {
         const response = await axios.put(
@@ -35,23 +34,21 @@ export const usePageStore = defineStore("page", {
           }
         );
         if (response.data.success) {
-          this.sections = sections; // Update store with the new sections
-          return true;
-        } else {
-          console.warn("Failed to update sections:", response.data.message);
-          return false;
+          this.sections = sections; // Sync the store after a successful update
+          console.log(`✅ Sections updated for page '${pageName}'.`);
         }
       } catch (error) {
-        console.error("Error updating sections:", error.message);
-        return false;
+        console.error(
+          `Failed to update sections for '${pageName}':`,
+          error.message
+        );
+        throw error;
       }
     },
 
-    // Reset the page store
-    resetPageStore() {
+    resetSections() {
       this.sections = [];
-      this.pageName = null;
-      this.slug = null;
+      this.currentPageName = null;
     },
   },
 });
