@@ -1,3 +1,4 @@
+<!-- MTTODO: SPlit och gör Reusable, hämta slug dynamiskt. -->
 <template>
   <div>
     <!-- If the menu page is found, render the content -->
