@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import axios from "@/services/axios";
-import { createPage } from "@/services/pageServices";
+import { createPage, updatePageSections } from "@/services/pageServices";
 
 export const useRestaurantStore = defineStore("restaurant", {
   state: () => ({
@@ -121,6 +121,22 @@ export const useRestaurantStore = defineStore("restaurant", {
         return response;
       } catch (error) {
         console.error("Failed to create page:", error.message);
+        throw error;
+      }
+    },
+
+    async updateSections(slug, pageName, sections) {
+      try {
+        const response = await updatePageSections(slug, pageName, sections);
+        if (response.success) {
+          // Update local state with new sections
+          this.restaurantData[pageName].sections = sections;
+          console.log("✅ Sections updated successfully.");
+        } else {
+          throw new Error(response.message || "Failed to update sections.");
+        }
+      } catch (error) {
+        console.error("Error updating sections:", error.message);
         throw error;
       }
     },
