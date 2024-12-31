@@ -4,6 +4,7 @@ import {
   insertSections,
   findPageByName,
   findPageWithSections,
+  updateSections,
 } from "../models/pageModel.js";
 import {
   findIngredientsByMenuItems,
@@ -108,4 +109,23 @@ export const getMenuPageData = async (slug) => {
     categories: categoryTree,
     items: itemsWithIngredients,
   };
+};
+
+export const updatePageSections = async (slug, pageName, sections) => {
+  // Fetch the restaurant by slug
+  const restaurant = await findRestaurantBySlug(slug);
+  if (!restaurant) {
+    throw new Error(`Restaurant '${slug}' not found.`);
+  }
+
+  // Check if the page exists
+  const page = await findPageByName(restaurant.id, pageName);
+  if (!page) {
+    throw new Error(`Page '${pageName}' not found for restaurant '${slug}'.`);
+  }
+
+  // Update sections
+  await updateSections(page.id, sections);
+
+  return { message: "Sections updated successfully." };
 };

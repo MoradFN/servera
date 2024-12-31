@@ -3,6 +3,7 @@ import {
   createPageWithSections,
   getMenuPageData,
   getPageData,
+  updatePageSections,
 } from "../services/pageService.js";
 
 export const createPageHandler = async (req, res) => {
@@ -68,5 +69,24 @@ export const fetchMenuPageHandler = async (req, res) => {
       success: false,
       message: "Server error while fetching the menu page.",
     });
+  }
+};
+
+export const updatePageSectionsHandler = async (req, res) => {
+  const { slug, pageName } = req.params;
+  const { sections } = req.body;
+
+  try {
+    if (!sections || !Array.isArray(sections)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid sections data." });
+    }
+
+    const result = await updatePageSections(slug, pageName, sections);
+    res.status(200).json({ success: true, message: result.message });
+  } catch (error) {
+    console.error("Error updating sections:", error.message);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
