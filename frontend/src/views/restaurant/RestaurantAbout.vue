@@ -7,9 +7,11 @@
         <button @click="toggleEditMode">
           {{ editMode ? "Disable Edit Mode" : "Enable Edit Mode" }}
         </button>
-        <div v-if="editMode" class="save-changes-bar">
-          <button @click="saveSections">Save Changes</button>
-        </div>
+        <transition name="fade">
+          <div v-if="editMode" class="save-changes-bar">
+            <button @click="saveSections">Save Changes</button>
+          </div>
+        </transition>
       </div>
 
       <!-- Editable Sections with Drag-and-Drop -->
@@ -45,7 +47,6 @@
                 v-model="section.content"
                 placeholder="Enter title content"
                 class="input"
-                @blur="updateContent(section)"
               />
             </div>
             <div v-else-if="section.section_type === 'text'">
@@ -53,7 +54,6 @@
                 v-model="section.content"
                 placeholder="Enter text content"
                 class="textarea"
-                @blur="updateContent(section)"
               ></textarea>
             </div>
             <div v-else-if="section.section_type === 'image'">
@@ -61,7 +61,6 @@
                 v-model="section.content"
                 placeholder="Enter image URL"
                 class="input"
-                @blur="updateContent(section)"
               />
             </div>
           </template>
@@ -74,6 +73,13 @@
           </template>
         </div>
       </draggable>
+
+      <!-- Add Section Button -->
+      <div v-if="editMode" class="add-section-container">
+        <button class="add-section-button" @click="addSection">
+          Add Section
+        </button>
+      </div>
     </div>
 
     <!-- If about page is missing -->
@@ -110,11 +116,6 @@ const pageIsFound = computed(() => props.pageStatus.about === "found");
 // Toggles edit mode
 const toggleEditMode = () => {
   editMode.value = !editMode.value;
-};
-
-// Updates section content
-const updateContent = (section) => {
-  changesMade.value = true;
 };
 
 // Adds a new section
@@ -212,14 +213,16 @@ const getSectionTag = (sectionType) => {
 /* Sticky Save Changes Bar */
 .save-changes-bar {
   position: sticky;
-  top: 0;
+  top: -50px;
   background-color: #007bff;
   color: white;
   text-align: center;
   padding: 10px;
   z-index: 10;
-  display: block;
-  transition: transform 0.3s ease-in-out;
+  transition: top 0.3s ease-in-out;
+}
+.save-changes-bar.visible {
+  top: 0;
 }
 
 /* Remove Button */
