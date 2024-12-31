@@ -25,9 +25,10 @@ const handleSubmit = async (e) => {
       }
     );
 
-    if (response.status === 200) {
+    if (response.status === 200 && response.data.success) {
+      const slug = response.data.data.restaurant.slug;
       toast.success("Login successful");
-      router.push("/"); //MTTODO: Redirect to SLUG after login?
+      router.push(`/${slug}/admin`);
     } else {
       toast.error("Something went wrong");
       error.value = "Something went wrong";
@@ -42,14 +43,28 @@ const handleSubmit = async (e) => {
 
 <template>
   <div class="login-form">
-    <form @submit="handleSubmit" class="form-container">
+    <form @submit="handleSubmit" class="form-container" autocomplete="on">
       <label class="form-label">
         E-post
-        <input type="email" v-model="email" class="form-input" />
+        <input
+          type="email"
+          v-model="email"
+          class="form-input"
+          name="email"
+          autocomplete="email"
+          required
+        />
       </label>
       <label class="form-label">
         Lösenord
-        <input type="password" v-model="password" class="form-input" />
+        <input
+          type="password"
+          v-model="password"
+          class="form-input"
+          name="password"
+          autocomplete="current-password"
+          required
+        />
       </label>
       <button type="submit" class="submit-button">Log in</button>
     </form>

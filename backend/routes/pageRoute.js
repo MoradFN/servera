@@ -2,6 +2,7 @@ import express from "express";
 import { createPageHandler } from "../controllers/pageController.js";
 import { fetchPageHandler } from "../controllers/pageController.js";
 import { fetchMenuPageHandler } from "../controllers/pageController.js";
+import { updatePageSectionsHandler } from "../controllers/pageController.js";
 import {
   verifyJWT,
   verifyOwnership,
@@ -17,6 +18,14 @@ router.post(
   verifyOwnership,
   requireActiveSubscription,
   createPageHandler
+);
+
+router.put(
+  "/:slug/:pageName/sections",
+  verifyJWT,
+  verifyOwnership,
+  requireActiveSubscription,
+  updatePageSectionsHandler
 );
 
 router.get("/:slug/home", fetchPageHandler);

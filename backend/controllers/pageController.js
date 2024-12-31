@@ -1,11 +1,10 @@
 // controllers/pageController.js
-import { createPageWithSections } from "../services/pageService.js";
-import { findPageWithSections } from "../models/pageModel.js";
 import {
-  findMenuCategoriesBySlug,
-  findMenuItemsBySlug,
-  findIngredientsByMenuItems,
-} from "../models/menuModel.js";
+  createPageWithSections,
+  getMenuPageData,
+  getPageData,
+  updatePageSections,
+} from "../services/pageService.js";
 
 export const createPageHandler = async (req, res) => {
   const { slug } = req.params;
@@ -38,98 +37,56 @@ export const fetchPageHandler = async (req, res) => {
   const pageName = req.path.split("/").pop(); // Extracts 'home' or 'about'
 
   try {
-    const pageData = await findPageWithSections(slug, pageName);
+    const pageData = await getPageData(slug, pageName);
 
-    if (!pageData || pageData.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: `Page '${pageName}' not found for restaurant '${slug}'.`,
-      });
-    }
-
-    res.json({
+    res.status(200).json({
       success: true,
       data: pageData,
     });
   } catch (error) {
-    console.error("Error fetching page:", error);
-    res.status(500).json({
+    console.error("Error fetching page:", error.message);
+    const statusCode = error.message.includes("not found") ? 404 : 500;
+    res.status(statusCode).json({
       success: false,
-      message: "Server error while fetching the page.",
+      message: error.message,
     });
   }
 };
-
-// UTILITY!!
-function buildCategoryTree(categories) {
-  const categoryMap = {};
-  const tree = [];
-
-  // Create a map of all categories
-  categories.forEach((category) => {
-    categoryMap[category.id] = { ...category, children: [] };
-  });
-
-  // Build the tree structure
-  categories.forEach((category) => {
-    if (category.parent_id) {
-      categoryMap[category.parent_id].children.push(categoryMap[category.id]);
-    } else {
-      tree.push(categoryMap[category.id]);
-    }
-  });
-
-  return tree;
-}
 
 export const fetchMenuPageHandler = async (req, res) => {
   const { slug } = req.params;
 
   try {
-    // Fetch menu sections, categories, and items
-    const sections = (await findPageWithSections(slug, "menu")) || [];
-    const categories = (await findMenuCategoriesBySlug(slug)) || [];
-    const items = (await findMenuItemsBySlug(slug)) || [];
-
-    // Fetch ingredients for menu items
-    const itemIds = items.map((item) => item.id);
-    const ingredients = await findIngredientsByMenuItems(itemIds);
-
-    // Associate ingredients with menu items
-    const itemsWithIngredients = items.map((item) => ({
-      ...item,
-      ingredients: ingredients
-        .filter((ingredient) => ingredient.menu_item_id === item.id)
-        .map((ingredient) => ({
-          id: ingredient.ingredient_id,
-          name: ingredient.ingredient_name,
-        })),
-    }));
-
-    // Build category tree
-    const categoryTree = buildCategoryTree(categories);
-
-    // Format the response structure
-    const menuData = {
-      sections: sections.map((section) => ({
-        page_name: "menu",
-        section_type: section.section_type,
-        content: section.content,
-        section_order: section.section_order,
-      })),
-      categories: categoryTree,
-      items: itemsWithIngredients,
-    };
+    const menuData = await getMenuPageData(slug);
 
     res.status(200).json({
       success: true,
       data: menuData,
     });
   } catch (error) {
-    console.error("Error fetching menu page:", error);
+    console.error("Error fetching menu page:", error.message);
     res.status(500).json({
       success: false,
       message: "Server error while fetching the menu page.",
     });
+  }
+};
+
+export const updatePageSectionsHandler = async (req, res) => {
+  const { slug, pageName } = req.params;
+  const { sections } = req.body;
+
+  try {
+    if (!sections || !Array.isArray(sections)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid sections data." });
+    }
+
+    const result = await updatePageSections(slug, pageName, sections);
+    res.status(200).json({ success: true, message: result.message });
+  } catch (error) {
+    console.error("Error updating sections:", error.message);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
