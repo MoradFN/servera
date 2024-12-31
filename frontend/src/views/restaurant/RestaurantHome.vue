@@ -2,77 +2,61 @@
   <div>
     <!-- If the home page is found, render the content -->
     <div v-if="pageIsFound">
-      <!-- Enable drag-and-drop for owners -->
-      <div v-if="isOwner">
-        <h2>Edit Home Page</h2>
-        <draggable v-model="editableSections" @end="onDragEnd">
-          <div
-            v-for="section in editableSections"
-            :key="section.id || section.section_order"
-            class="editable-section"
-          >
-            <div class="section-header">
-              <span class="drag-handle">☰</span>
-              <select v-model="section.section_type">
-                <option value="title">Title</option>
-                <option value="text">Text</option>
-                <option value="image">Image</option>
-              </select>
-              <button @click="removeSection(section)">Remove</button>
-            </div>
-            <div class="section-content">
-              <template v-if="section.section_type === 'title'">
-                <input
-                  v-model="section.content"
-                  placeholder="Enter title content"
-                  class="input"
-                />
-              </template>
-              <template v-else-if="section.section_type === 'text'">
-                <textarea
-                  v-model="section.content"
-                  placeholder="Enter text content"
-                  class="textarea"
-                ></textarea>
-              </template>
-              <template v-else-if="section.section_type === 'image'">
-                <input
-                  type="text"
-                  v-model="section.content"
-                  placeholder="Enter image URL"
-                  class="input"
-                />
-              </template>
-              <template v-else>
-                <p>Unsupported section type</p>
-              </template>
-            </div>
-          </div>
-        </draggable>
-        <button class="add-section" @click="addSection">Add Section</button>
-        <button class="save-sections" @click="saveSections">
-          Save Changes
+      <!-- Edit Mode Toggle and Save Button -->
+      <div v-if="isOwner" class="owner-controls">
+        <button @click="toggleEditMode">
+          {{ editMode ? "Disable Edit Mode" : "Enable Edit Mode" }}
         </button>
-      </div>
-
-      <!-- Render non-editable sections for public view -->
-      <div v-else>
-        <div v-for="section in homePage" :key="section.section_order">
-          <h1 v-if="section.section_type === 'title'">{{ section.content }}</h1>
-          <p v-else-if="section.section_type === 'text'">
-            {{ section.content }}
-          </p>
-          <img
-            v-else-if="section.section_type === 'image'"
-            :src="section.content"
-            alt="Image Content"
-          />
-          <p v-else>Unsupported section type: {{ section.section_type }}</p>
+        <div
+          v-if="editMode"
+          class="save-changes-bar"
+          :class="{ visible: changesMade }"
+        >
+          <button @click="saveSections">Save Changes</button>
         </div>
       </div>
+
+      <!-- Editable Sections with Drag-and-Drop -->
+      <draggable
+        v-model="editableSections"
+        @end="onDragEnd"
+        class="draggable-list"
+        handle=".drag-handle"
+      >
+        <div
+          v-for="section in editableSections"
+          :key="section.id || section.section_order"
+          class="editable-section"
+          :class="{ dashed: editMode }"
+        >
+          <!-- Drag Handle and Section Type Selector -->
+          <div v-if="editMode" class="section-controls">
+            <span class="drag-handle">☰</span>
+            <select v-model="section.section_type" @change="changesMade = true">
+              <option value="title">Title</option>
+              <option value="text">Text</option>
+              <option value="image">Image</option>
+            </select>
+            <button class="remove-button" @click="removeSection(section)">
+              Remove
+            </button>
+          </div>
+
+          <!-- Editable Content -->
+          <component
+            :is="getSectionTag(section.section_type)"
+            contenteditable="true"
+            :data-placeholder="`Edit ${section.section_type}`"
+            @input="updateContent(section, $event)"
+            class="editable-content"
+          >
+            {{ section.content }}
+          </component>
+        </div>
+      </draggable>
     </div>
 
-    <!-- If home page is missing, decide what to show -->
+    <!-- If home page is missing -->
     <div v-else>
       <p v-if="isOwner">
         This page doesn't exist yet. You can create it in the Admin Dashboard.
@@ -87,7 +71,7 @@ import { ref, computed } from "vue";
 import { VueDraggableNext } from "vue-draggable-next";
 import { useRestaurantStore } from "@/stores/restaurantStore";
 
-const draggable = VueDraggableNext; // Register draggable component
+const draggable = VueDraggableNext;
 
 const props = defineProps({
   restaurantData: { type: Object, required: true },
@@ -96,14 +80,26 @@ const props = defineProps({
 });
 
 const restaurantStore = useRestaurantStore();
+const editMode = ref(false);
+const changesMade = ref(false);
 
 // Editable sections (clone the initial data for editing)
 const editableSections = ref([...(props.restaurantData?.home || [])]);
 
-const homePage = computed(() => props.restaurantData?.home || []);
 const pageIsFound = computed(() => props.pageStatus.home === "found");
 
-// Add a new section
+// Toggles edit mode
+const toggleEditMode = () => {
+  editMode.value = !editMode.value;
+};
+
+// Updates section content
+const updateContent = (section, event) => {
+  section.content = event.target.textContent;
+  changesMade.value = true;
+};
+
+// Adds a new section
 const addSection = () => {
   editableSections.value.push({
     id: null,
@@ -111,75 +107,127 @@ const addSection = () => {
     section_type: "text",
     content: "",
   });
+  changesMade.value = true;
 };
 
-// Remove a section
+// Removes a section
 const removeSection = (section) => {
   const index = editableSections.value.indexOf(section);
   if (index !== -1) editableSections.value.splice(index, 1);
+  changesMade.value = true;
 };
 
-// Update section order after drag-and-drop
+// Handles drag-and-drop reordering
 const onDragEnd = () => {
   editableSections.value.forEach((section, index) => {
     section.section_order = index + 1;
   });
+  changesMade.value = true;
 };
 
-// Save changes to sections
+// Saves the updated sections
 const saveSections = async () => {
   try {
     const slug = restaurantStore.currentSlug;
-    const pageName = "home"; // Use dynamic page name if needed
+    const pageName = "home";
     await restaurantStore.updateSections(
       slug,
       pageName,
       editableSections.value
     );
     alert("Sections updated successfully!");
+    changesMade.value = false;
   } catch (error) {
     console.error("Failed to update sections:", error.message);
     alert("Failed to update sections.");
   }
 };
+
+// Determines the correct HTML tag for the section type
+const getSectionTag = (sectionType) => {
+  switch (sectionType) {
+    case "title":
+      return "h2";
+    case "text":
+      return "p";
+    case "image":
+      return "img";
+    default:
+      return "div";
+  }
+};
 </script>
 
 <style scoped>
+/* Editable Sections */
 .editable-section {
-  border: 1px solid #ddd;
   padding: 10px;
   margin-bottom: 10px;
-  border-radius: 4px;
-  background-color: #f9f9f9;
+  position: relative;
 }
-.section-header {
+.editable-section.dashed {
+  border: 1px dashed #007bff;
+  border-radius: 4px;
+}
+
+/* Section Controls */
+.section-controls {
   display: flex;
   align-items: center;
-  margin-bottom: 10px;
   gap: 10px;
+  margin-bottom: 10px;
 }
+
 .drag-handle {
   cursor: grab;
 }
-.input,
-.textarea {
+
+/* Content Styles */
+.editable-content {
+  outline: none;
+  display: inline-block;
   width: 100%;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: 5px;
 }
-.add-section,
-.save-sections {
-  margin-top: 10px;
-  padding: 10px 20px;
+.read-only-content {
+  display: inline-block;
+  width: 100%;
+}
+
+/* Sticky Save Changes Bar */
+.save-changes-bar {
+  position: sticky;
+  top: 0;
   background-color: #007bff;
   color: white;
+  text-align: center;
+  padding: 10px;
+  z-index: 10;
+  display: none;
+  transition: transform 0.3s ease-in-out;
+}
+.save-changes-bar.visible {
+  display: block;
+  transform: translateY(0);
+}
+
+/* Remove Button */
+.remove-button {
+  background-color: red;
+  color: white;
   border: none;
+  padding: 5px 10px;
   border-radius: 4px;
   cursor: pointer;
 }
-.add-section:hover,
-.save-sections:hover {
-  background-color: #0056b3;
+
+/* Draggable List */
+.draggable-list {
+  margin-bottom: 20px;
+}
+
+/* Owner Controls */
+.owner-controls {
+  margin-bottom: 20px;
 }
 </style>
