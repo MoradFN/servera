@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import axios from "@/services/axios";
-import { createPage } from "@/services/pageServices";
+import { createPage, updatePageSections } from "@/services/pageServices";
 
 export const useRestaurantStore = defineStore("restaurant", {
   state: () => ({
