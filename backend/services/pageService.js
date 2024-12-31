@@ -112,13 +112,13 @@ export const getMenuPageData = async (slug) => {
 };
 
 export const updatePageSections = async (slug, pageName, sections) => {
-  // Fetch the restaurant by slug
+  // Fetch the restaurant using slug to get the restaurantId
   const restaurant = await findRestaurantBySlug(slug);
   if (!restaurant) {
     throw new Error(`Restaurant '${slug}' not found.`);
   }
 
-  // Check if the page exists
+  // Fetch the page using restaurantId and pageName and check if it exists
   const page = await findPageByName(restaurant.id, pageName);
   if (!page) {
     throw new Error(`Page '${pageName}' not found for restaurant '${slug}'.`);
