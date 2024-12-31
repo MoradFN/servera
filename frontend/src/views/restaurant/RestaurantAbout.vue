@@ -7,11 +7,7 @@
         <button @click="toggleEditMode">
           {{ editMode ? "Disable Edit Mode" : "Enable Edit Mode" }}
         </button>
-        <div
-          v-if="editMode"
-          class="save-changes-bar"
-          :class="{ visible: changesMade }"
-        >
+        <div v-if="editMode" class="save-changes-bar">
           <button @click="saveSections">Save Changes</button>
         </div>
       </div>
@@ -32,7 +28,7 @@
           <!-- Drag Handle and Section Type Selector -->
           <div v-if="editMode" class="section-controls">
             <span class="drag-handle">☰</span>
-            <select v-model="section.section_type" @change="changesMade = true">
+            <select v-model="section.section_type">
               <option value="title">Title</option>
               <option value="text">Text</option>
               <option value="image">Image</option>
@@ -42,16 +38,40 @@
             </button>
           </div>
 
-          <!-- Editable Content -->
-          <component
-            :is="getSectionTag(section.section_type)"
-            contenteditable="true"
-            :data-placeholder="`Edit ${section.section_type}`"
-            @input="updateContent(section, $event)"
-            class="editable-content"
-          >
-            {{ section.content }}
-          </component>
+          <!-- Editable Content using input or textarea -->
+          <template v-if="editMode">
+            <div v-if="section.section_type === 'title'">
+              <input
+                v-model="section.content"
+                placeholder="Enter title content"
+                class="input"
+                @blur="updateContent(section)"
+              />
+            </div>
+            <div v-else-if="section.section_type === 'text'">
+              <textarea
+                v-model="section.content"
+                placeholder="Enter text content"
+                class="textarea"
+                @blur="updateContent(section)"
+              ></textarea>
+            </div>
+            <div v-else-if="section.section_type === 'image'">
+              <input
+                v-model="section.content"
+                placeholder="Enter image URL"
+                class="input"
+                @blur="updateContent(section)"
+              />
+            </div>
+          </template>
+
+          <!-- Read-Only Content -->
+          <template v-else>
+            <component :is="getSectionTag(section.section_type)">
+              {{ section.content }}
+            </component>
+          </template>
         </div>
       </draggable>
     </div>
@@ -81,7 +101,6 @@ const props = defineProps({
 
 const restaurantStore = useRestaurantStore();
 const editMode = ref(false);
-const changesMade = ref(false);
 
 // Editable sections (clone the initial data for editing)
 const editableSections = ref([...(props.restaurantData?.about || [])]);
@@ -94,8 +113,7 @@ const toggleEditMode = () => {
 };
 
 // Updates section content
-const updateContent = (section, event) => {
-  section.content = event.target.textContent;
+const updateContent = (section) => {
   changesMade.value = true;
 };
 
@@ -107,14 +125,12 @@ const addSection = () => {
     section_type: "text",
     content: "",
   });
-  changesMade.value = true;
 };
 
 // Removes a section
 const removeSection = (section) => {
   const index = editableSections.value.indexOf(section);
   if (index !== -1) editableSections.value.splice(index, 1);
-  changesMade.value = true;
 };
 
 // Handles drag-and-drop reordering
@@ -122,7 +138,6 @@ const onDragEnd = () => {
   editableSections.value.forEach((section, index) => {
     section.section_order = index + 1;
   });
-  changesMade.value = true;
 };
 
 // Saves the updated sections
@@ -136,7 +151,6 @@ const saveSections = async () => {
       editableSections.value
     );
     alert("Sections updated successfully!");
-    changesMade.value = false;
   } catch (error) {
     console.error("Failed to update sections:", error.message);
     alert("Failed to update sections.");
@@ -183,11 +197,12 @@ const getSectionTag = (sectionType) => {
 }
 
 /* Content Styles */
-.editable-content {
-  outline: none;
-  display: inline-block;
+.input,
+.textarea {
   width: 100%;
   padding: 5px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
 }
 .read-only-content {
   display: inline-block;
@@ -203,12 +218,8 @@ const getSectionTag = (sectionType) => {
   text-align: center;
   padding: 10px;
   z-index: 10;
-  display: none;
-  transition: transform 0.3s ease-in-out;
-}
-.save-changes-bar.visible {
   display: block;
-  transform: translateY(0);
+  transition: transform 0.3s ease-in-out;
 }
 
 /* Remove Button */
@@ -229,5 +240,22 @@ const getSectionTag = (sectionType) => {
 /* Owner Controls */
 .owner-controls {
   margin-bottom: 20px;
+}
+
+/* Add Section Button */
+.add-section-container {
+  text-align: center;
+  margin-top: 10px;
+}
+.add-section-button {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.add-section-button:hover {
+  background-color: #218838;
 }
 </style>
