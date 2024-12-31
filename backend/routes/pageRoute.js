@@ -30,7 +30,7 @@ router.put(
 
 router.get("/:slug/home", fetchPageHandler);
 router.get("/:slug/about", fetchPageHandler);
-// router.get("/:slug/menu", fetchPageHandler);
 router.get("/:slug/menu", fetchMenuPageHandler);
 
+// router.get("/:slug/menu", fetchPageHandler);
 export default router;
