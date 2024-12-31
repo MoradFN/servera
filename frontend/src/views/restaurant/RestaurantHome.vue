@@ -2,18 +2,17 @@
   <div>
     <!-- If the home page is found, render the content -->
     <div v-if="pageIsFound">
-      <!-- Edit Mode Toggle and Save Button -->
+      <!-- Edit Mode Toggle -->
       <div v-if="isOwner" class="owner-controls">
         <button @click="toggleEditMode">
           {{ editMode ? "Disable Edit Mode" : "Enable Edit Mode" }}
         </button>
-        <div
-          v-if="editMode"
-          class="save-changes-bar"
-          :class="{ visible: changesMade }"
-        >
-          <button @click="saveSections">Save Changes</button>
-        </div>
+        <transition v-if="editMode" name="slide-fade">
+          <!-- Save Changes Button only visible if changesMade -->
+          <div v-if="changesMade" class="save-changes-bar">
+            <button @click="saveSections">Save Changes</button>
+          </div>
+        </transition>
       </div>
 
       <!-- Editable Sections with Drag-and-Drop -->
@@ -32,7 +31,7 @@
           <!-- Drag Handle and Section Type Selector -->
           <div v-if="editMode" class="section-controls">
             <span class="drag-handle">☰</span>
-            <select v-model="section.section_type" @change="changesMade = true">
+            <select v-model="section.section_type" @change="onInputChange">
               <option value="title">Title</option>
               <option value="text">Text</option>
               <option value="image">Image</option>
@@ -42,18 +41,49 @@
             </button>
           </div>
 
-          <!-- Editable Content -->
-          <component
-            :is="getSectionTag(section.section_type)"
-            contenteditable="true"
-            :data-placeholder="`Edit ${section.section_type}`"
-            @input="updateContent(section, $event)"
-            class="editable-content"
-          >
-            {{ section.content }}
-          </component>
+          <!-- Editable Content using input or textarea -->
+          <template v-if="editMode">
+            <div v-if="section.section_type === 'title'">
+              <input
+                v-model="section.content"
+                placeholder="Enter title content"
+                class="input"
+                @input="onInputChange"
+              />
+            </div>
+            <div v-else-if="section.section_type === 'text'">
+              <textarea
+                v-model="section.content"
+                placeholder="Enter text content"
+                class="textarea"
+                @input="onInputChange"
+              ></textarea>
+            </div>
+            <div v-else-if="section.section_type === 'image'">
+              <input
+                v-model="section.content"
+                placeholder="Enter image URL"
+                class="input"
+                @input="onInputChange"
+              />
+            </div>
+          </template>
+
+          <!-- Read-Only Content -->
+          <template v-else>
+            <component :is="getSectionTag(section.section_type)">
+              {{ section.content }}
+            </component>
+          </template>
         </div>
       </draggable>
+
+      <!-- Add Section Button -->
+      <div v-if="editMode" class="add-section-container">
+        <button class="add-section-button" @click="addSection">
+          Add Section
+        </button>
+      </div>
     </div>
 
     <!-- If home page is missing -->
@@ -93,9 +123,8 @@ const toggleEditMode = () => {
   editMode.value = !editMode.value;
 };
 
-// Updates section content
-const updateContent = (section, event) => {
-  section.content = event.target.textContent;
+// Sets changesMade to true on any user interaction
+const onInputChange = () => {
   changesMade.value = true;
 };
 
@@ -136,7 +165,8 @@ const saveSections = async () => {
       editableSections.value
     );
     alert("Sections updated successfully!");
-    changesMade.value = false;
+    changesMade.value = false; // Reset changes
+    editMode.value = false; // Disable edit mode after save
   } catch (error) {
     console.error("Failed to update sections:", error.message);
     alert("Failed to update sections.");
@@ -183,11 +213,12 @@ const getSectionTag = (sectionType) => {
 }
 
 /* Content Styles */
-.editable-content {
-  outline: none;
-  display: inline-block;
+.input,
+.textarea {
   width: 100%;
   padding: 5px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
 }
 .read-only-content {
   display: inline-block;
@@ -197,18 +228,16 @@ const getSectionTag = (sectionType) => {
 /* Sticky Save Changes Bar */
 .save-changes-bar {
   position: sticky;
-  top: 0;
+  top: -50px;
   background-color: #007bff;
   color: white;
   text-align: center;
   padding: 10px;
   z-index: 10;
-  display: none;
-  transition: transform 0.3s ease-in-out;
+  transition: top 0.3s ease-in-out;
 }
 .save-changes-bar.visible {
-  display: block;
-  transform: translateY(0);
+  top: 0;
 }
 
 /* Remove Button */
@@ -229,5 +258,36 @@ const getSectionTag = (sectionType) => {
 /* Owner Controls */
 .owner-controls {
   margin-bottom: 20px;
+}
+
+/* Add Section Button */
+.add-section-container {
+  text-align: center;
+  margin-top: 10px;
+}
+.add-section-button {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.add-section-button:hover {
+  background-color: #218838;
+}
+
+/* Transition Effects */
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.slide-fade-enter-from {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+.slide-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 </style>

@@ -2,13 +2,14 @@
   <div>
     <!-- If the about page is found, render the content -->
     <div v-if="pageIsFound">
-      <!-- Edit Mode Toggle and Save Button -->
+      <!-- Edit Mode Toggle -->
       <div v-if="isOwner" class="owner-controls">
         <button @click="toggleEditMode">
           {{ editMode ? "Disable Edit Mode" : "Enable Edit Mode" }}
         </button>
-        <transition name="fade">
-          <div v-if="editMode" class="save-changes-bar">
+        <transition v-if="editMode" name="slide-fade">
+          <!-- Save Changes Button only visible if changesMade -->
+          <div v-if="changesMade" class="save-changes-bar">
             <button @click="saveSections">Save Changes</button>
           </div>
         </transition>
@@ -30,7 +31,7 @@
           <!-- Drag Handle and Section Type Selector -->
           <div v-if="editMode" class="section-controls">
             <span class="drag-handle">☰</span>
-            <select v-model="section.section_type">
+            <select v-model="section.section_type" @change="onInputChange">
               <option value="title">Title</option>
               <option value="text">Text</option>
               <option value="image">Image</option>
@@ -47,6 +48,7 @@
                 v-model="section.content"
                 placeholder="Enter title content"
                 class="input"
+                @input="onInputChange"
               />
             </div>
             <div v-else-if="section.section_type === 'text'">
@@ -54,6 +56,7 @@
                 v-model="section.content"
                 placeholder="Enter text content"
                 class="textarea"
+                @input="onInputChange"
               ></textarea>
             </div>
             <div v-else-if="section.section_type === 'image'">
@@ -61,6 +64,7 @@
                 v-model="section.content"
                 placeholder="Enter image URL"
                 class="input"
+                @input="onInputChange"
               />
             </div>
           </template>
@@ -107,6 +111,7 @@ const props = defineProps({
 
 const restaurantStore = useRestaurantStore();
 const editMode = ref(false);
+const changesMade = ref(false);
 
 // Editable sections (clone the initial data for editing)
 const editableSections = ref([...(props.restaurantData?.about || [])]);
@@ -118,6 +123,11 @@ const toggleEditMode = () => {
   editMode.value = !editMode.value;
 };
 
+// Sets changesMade to true on any user interaction
+const onInputChange = () => {
+  changesMade.value = true;
+};
+
 // Adds a new section
 const addSection = () => {
   editableSections.value.push({
@@ -126,12 +136,14 @@ const addSection = () => {
     section_type: "text",
     content: "",
   });
+  changesMade.value = true;
 };
 
 // Removes a section
 const removeSection = (section) => {
   const index = editableSections.value.indexOf(section);
   if (index !== -1) editableSections.value.splice(index, 1);
+  changesMade.value = true;
 };
 
 // Handles drag-and-drop reordering
@@ -139,6 +151,7 @@ const onDragEnd = () => {
   editableSections.value.forEach((section, index) => {
     section.section_order = index + 1;
   });
+  changesMade.value = true;
 };
 
 // Saves the updated sections
@@ -152,6 +165,8 @@ const saveSections = async () => {
       editableSections.value
     );
     alert("Sections updated successfully!");
+    changesMade.value = false; // Reset changes
+    editMode.value = false; // Disable edit mode after save
   } catch (error) {
     console.error("Failed to update sections:", error.message);
     alert("Failed to update sections.");
@@ -260,5 +275,19 @@ const getSectionTag = (sectionType) => {
 }
 .add-section-button:hover {
   background-color: #218838;
+}
+
+/* Transition Effects */
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.slide-fade-enter-from {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+.slide-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 </style>
