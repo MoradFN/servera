@@ -125,6 +125,22 @@ export const useRestaurantStore = defineStore("restaurant", {
       }
     },
 
+    async updateSections(slug, pageName, sections) {
+      try {
+        const response = await updatePageSections(slug, pageName, sections);
+        if (response.success) {
+          // Update local state with new sections
+          this.restaurantData[pageName].sections = sections;
+          console.log("✅ Sections updated successfully.");
+        } else {
+          throw new Error(response.message || "Failed to update sections.");
+        }
+      } catch (error) {
+        console.error("Error updating sections:", error.message);
+        throw error;
+      }
+    },
+
     resetStore() {
       this.restaurantData = {};
       this.pageStatus = {};

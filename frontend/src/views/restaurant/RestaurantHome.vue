@@ -84,8 +84,10 @@
 
 <script setup>
 import { ref, computed } from "vue";
-import { useRestaurantStore } from "@/stores/restaurantStore";
 import { VueDraggableNext } from "vue-draggable-next";
+import { useRestaurantStore } from "@/stores/restaurantStore";
+
+const draggable = VueDraggableNext; // Register draggable component
 
 const props = defineProps({
   restaurantData: { type: Object, required: true },
