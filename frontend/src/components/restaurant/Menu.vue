@@ -20,21 +20,22 @@
         :editMode="editMode"
         @change="onInputChange"
       />
-
-      <!-- Render MenuSections only in view mode -->
-      <MenuSections v-if="!editMode" :sections="menuSections" />
     </div>
 
-    <!-- Remder and Use the ManageCategories component, if owner och if edit mode -->
-    <div v-if="isOwner && editMode">
-      <ManageCategories
-        :initialCategories="menuCategories"
-        :categorizedItems="categorizedItems"
-        :slug="slug"
-        @categoriesUpdated="onCategoriesUpdated"
-      />
-    </div>
+    <!-- Render MenuSections only in view mode -->
+    <MenuSections v-if="!editMode" :sections="menuSections" />
+  </div>
 
+  <!-- Remder and Use the ManageCategories component, if owner och if edit mode -->
+  <div v-if="isOwner && editMode">
+    <ManageCategories
+      :initialCategories="menuCategories"
+      :categorizedItems="categorizedItems"
+      :slug="slug"
+      @categoriesUpdated="onCategoriesUpdated"
+    />
+  </div>
+  <div>
     <!-- Use the MenuCategories component -->
     <MenuCategories
       :categories="menuCategories"
@@ -48,8 +49,8 @@ import { computed, ref, watchEffect } from "vue";
 import { useRestaurantStore } from "@/stores/restaurantStore";
 import EditableSections from "@/components/restaurant/menu/EditableSections.vue";
 import MenuSections from "@/components/restaurant/menu/MenuSections.vue";
-import ManageCategories from "@/components/restaurant/menu/ManageCategories.vue";
 import MenuCategories from "@/components/restaurant/menu/MenuCategories.vue";
+import ManageCategories from "@/components/restaurant/menu/ManageCategories.vue";
 
 export default {
   components: {
@@ -73,6 +74,7 @@ export default {
     const editableSections = ref([]);
 
     // Computed properties
+    const slug = computed(() => store.currentSlug);
     const menuData = computed(() => store.restaurantData?.menu || {});
     const menuSections = computed(() => menuData.value.sections || []);
     const menuCategories = computed(() => menuData.value.categories || []);
@@ -82,6 +84,7 @@ export default {
     watchEffect(() => {
       editableSections.value = JSON.parse(JSON.stringify(menuSections.value));
     });
+
     // Map categories to items, including parent and child categories
     const categorizedItems = computed(() => {
       const mapping = {};
@@ -112,18 +115,13 @@ export default {
       editMode.value = !editMode.value;
     };
 
-    const onCategoriesUpdated = (updatedCategories) => {
-      store.restaurantData.menu.categories = updatedCategories;
-    };
-
     const onInputChange = () => {
       changesMade.value = true;
     };
 
     const saveSections = async () => {
       try {
-        const slug = store.currentSlug;
-        await store.updateSections(slug, "menu", editableSections.value);
+        await store.updateSections(slug.value, "menu", editableSections.value);
         changesMade.value = false;
         editMode.value = false;
         alert("Sections updated successfully!");
@@ -131,6 +129,12 @@ export default {
         console.error("Failed to save sections:", error.message);
       }
     };
+
+    const onCategoriesUpdated = (updatedCategories) => {
+      console.log("Updated Categories:", updatedCategories);
+      store.restaurantData.menu.categories = updatedCategories;
+    };
+
     return {
       menuSections,
       menuCategories,
@@ -142,6 +146,7 @@ export default {
       onInputChange,
       saveSections,
       onCategoriesUpdated,
+      slug,
     };
   },
 };
