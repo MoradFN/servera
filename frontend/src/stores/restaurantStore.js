@@ -141,7 +141,33 @@ export const useRestaurantStore = defineStore("restaurant", {
       }
     },
 
-    //     async updateMenuData(slug, categories, items) {
+    async updateMenuData(slug, categories, items) {
+      try {
+        // Make the PUT request to your new endpoint
+        const response = await axios.put(`/pages/${slug}/menu`, {
+          categories,
+          items,
+        });
+
+        if (response.data.success) {
+          // Optionally refresh or merge data in the store
+          // e.g., re-fetch restaurant data to get the updated menu
+          await this.fetchRestaurantData(slug);
+
+          console.log("✅ Menu data updated successfully via store.");
+          return response.data;
+        } else {
+          throw new Error(
+            response.data.message || "Failed to update menu data."
+          );
+        }
+      } catch (error) {
+        console.error("Error in updateMenuData:", error.message);
+        throw error;
+      }
+    },
+
+    // async updateMenuData(slug, categories, items) {
     //   try {
     //     // Make the PUT request to your new endpoint
     //     const response = await axios.put(`/pages/${slug}/menu`, {
@@ -166,6 +192,30 @@ export const useRestaurantStore = defineStore("restaurant", {
     //     throw error;
     //   }
     // },
+
+    async updateMenuData(slug, categories, items) {
+      try {
+        const response = await axios.put(`/pages/${slug}/menu`, {
+          categories,
+          items,
+        });
+
+        if (response.data.success) {
+          // Update local store with new categories and items
+          this.restaurantData.menu.categories = [...categories];
+          this.restaurantData.menu.items = [...items];
+          console.log("✅ Menu data updated successfully.");
+          return response.data;
+        } else {
+          throw new Error(
+            response.data.message || "Failed to update menu data."
+          );
+        }
+      } catch (error) {
+        console.error("Error updating menu data:", error.message);
+        throw error;
+      }
+    },
 
     async updateMenuCategories(slug, categories) {
       try {
