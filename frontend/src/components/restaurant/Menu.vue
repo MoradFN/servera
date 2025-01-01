@@ -64,6 +64,14 @@ export default {
       type: Boolean,
       required: true,
     },
+    restaurantData: {
+      type: Object,
+      required: true,
+    },
+    pageStatus: {
+      type: Object,
+      required: true,
+    },
   },
   setup(props) {
     const store = useRestaurantStore();
