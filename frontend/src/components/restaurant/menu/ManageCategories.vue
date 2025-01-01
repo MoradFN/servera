@@ -18,16 +18,31 @@
         @input="onInputChange"
       />
       <div class="buttons">
-        <button :disabled="index === 0" @click="moveCategory(index, -1)">
+        <button
+          :disabled="index === 0"
+          @click="moveCategory(categories, index, -1)"
+        >
           ↑
         </button>
         <button
           :disabled="index === categories.length - 1"
-          @click="moveCategory(index, 1)"
+          @click="moveCategory(categories, index, 1)"
         >
           ↓
         </button>
-        <button @click="removeCategory(category)">Remove</button>
+        <button @click="removeCategory(categories, category)">Remove</button>
+      </div>
+
+      <!-- Render child categories recursively -->
+      <div
+        v-if="category.children && category.children.length > 0"
+        class="child-categories"
+      >
+        <ManageCategories
+          :initialCategories="category.children"
+          :slug="slug"
+          @categoriesUpdated="onChildCategoriesUpdated(category)"
+        />
       </div>
     </div>
     <button @click="addCategory">Add Category</button>
@@ -67,25 +82,26 @@ const addCategory = () => {
     parent_id: null,
     name: "",
     display_order: categories.value.length + 1,
+    children: [], // Ensure new categories can have children
   });
 };
 
 // Method to remove a category
-const removeCategory = (category) => {
-  categories.value = categories.value.filter((c) => c !== category);
+const removeCategory = (parentCategories, category) => {
+  parentCategories.splice(parentCategories.indexOf(category), 1);
 };
 
 // Method to move a category up or down
-const moveCategory = (index, direction) => {
+const moveCategory = (parentCategories, index, direction) => {
   const newIndex = index + direction;
-  if (newIndex < 0 || newIndex >= categories.value.length) return;
+  if (newIndex < 0 || newIndex >= parentCategories.length) return;
 
   // Swap categories
-  const [movedCategory] = categories.value.splice(index, 1);
-  categories.value.splice(newIndex, 0, movedCategory);
+  const [movedCategory] = parentCategories.splice(index, 1);
+  parentCategories.splice(newIndex, 0, movedCategory);
 
   // Update display_order
-  categories.value.forEach((category, idx) => {
+  parentCategories.forEach((category, idx) => {
     category.display_order = idx + 1;
   });
 };
@@ -99,6 +115,12 @@ const saveCategories = async () => {
   } catch (error) {
     console.error("Failed to save categories:", error.message);
   }
+};
+
+// Handle updates from child categories
+const onChildCategoriesUpdated = (parentCategory) => (updatedChildren) => {
+  parentCategory.children = updatedChildren;
+  emit("categoriesUpdated", categories.value);
 };
 
 // Placeholder for input change logging
@@ -117,6 +139,12 @@ const onInputChange = () => {
   align-items: center;
   gap: 1rem;
   margin-bottom: 0.5rem;
+}
+
+.child-categories {
+  margin-left: 2rem;
+  border-left: 2px solid #ccc;
+  padding-left: 1rem;
 }
 
 .buttons {
