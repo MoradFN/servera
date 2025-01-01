@@ -3,6 +3,7 @@ import {
   createPageWithSections,
   getMenuPageData,
   getPageData,
+  updateMenuData,
   updatePageSections,
 } from "../services/pageService.js";
 
@@ -87,5 +88,30 @@ export const updatePageSectionsHandler = async (req, res) => {
   } catch (error) {
     console.error("Error updating sections:", error.message);
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+/// MENU CAT AND ITEMS / INGREDIENTS, BULK UPDATES.
+//////////////MTTODO: BULK UPDATES FOR NOW. MIGHT CHANGE LATER //////////////////
+export const updateMenuDataHandler = async (req, res) => {
+  const { slug } = req.params;
+  const { categories, items } = req.body;
+
+  try {
+    // Basic validation
+    if (!Array.isArray(categories) || !Array.isArray(items)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid payload." });
+    }
+
+    // Call service
+    await updateMenuData(slug, categories, items);
+
+    return res
+      .status(200)
+      .json({ success: true, message: "Menu data updated successfully." });
+  } catch (err) {
+    console.error("Error updating menu data:", err.message);
+    return res.status(500).json({ success: false, message: err.message });
   }
 };
