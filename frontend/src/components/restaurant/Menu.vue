@@ -13,15 +13,17 @@
         </transition>
       </div>
 
+      <!-- Render EditableSections only in edit mode -->
       <EditableSections
+        v-if="editMode"
         v-model="editableSections"
         :editMode="editMode"
         @change="onInputChange"
       />
     </div>
 
-    <!-- Use the MenuSections component -->
-    <MenuSections :sections="menuSections" />
+    <!-- Render MenuSections only in view mode -->
+    <MenuSections v-if="!editMode" :sections="menuSections" />
 
     <!-- Use the MenuCategories component -->
     <MenuCategories
@@ -32,7 +34,7 @@
 </template>
 
 <script>
-import { computed, ref } from "vue";
+import { computed, ref, watchEffect } from "vue";
 import { useRestaurantStore } from "@/stores/restaurantStore";
 import EditableSections from "@/components/restaurant/menu/EditableSections.vue";
 import MenuSections from "@/components/restaurant/menu/MenuSections.vue";
@@ -56,13 +58,18 @@ export default {
     // State
     const editMode = ref(false);
     const changesMade = ref(false);
+    const editableSections = ref([]);
 
     // Computed properties
     const menuData = computed(() => store.restaurantData?.menu || {});
     const menuSections = computed(() => menuData.value.sections || []);
     const menuCategories = computed(() => menuData.value.categories || []);
     const menuItems = computed(() => menuData.value.items || []);
-    const editableSections = ref([...menuSections.value]);
+
+    // Dynamically synchronize editableSections
+    watchEffect(() => {
+      editableSections.value = JSON.parse(JSON.stringify(menuSections.value));
+    });
 
     // Map categories to items, including parent and child categories
     const categorizedItems = computed(() => {
@@ -118,7 +125,6 @@ export default {
       toggleEditMode,
       onInputChange,
       saveSections,
-      isOwner: props.isOwner,
     };
   },
 };
