@@ -1,21 +1,24 @@
-<!-- MTTODO: SPlit och gör Reusable, hämta slug dynamiskt. -->
 <template>
   <div>
     <!-- If the menu page is found, render the content -->
     <div v-if="pageIsFound">
-      <!-- Render sections -->
-      <div v-for="section in menuSections" :key="section.section_order">
-        <h1 v-if="section.section_type === 'title'">{{ section.content }}</h1>
-        <p v-else-if="section.section_type === 'text'">{{ section.content }}</p>
-        <img
-          v-else-if="section.section_type === 'image'"
-          :src="section.content"
-          alt="Image Content"
+      <div v-if="isOwner" class="owner-controls">
+        <button @click="toggleEditMode">
+          {{ editMode ? "Disable Edit Mode" : "Enable Edit Mode" }}
+        </button>
+        <transition v-if="editMode" name="slide-fade">
+          <div v-if="changesMade" class="save-changes-bar">
+            <button @click="saveSections">Save Changes</button>
+          </div>
+        </transition>
+        <EditableSections
+          v-model="editableSections"
+          :editMode="editMode"
+          @change="onInputChange"
         />
-        <p v-else>Unsupported section type: {{ section.section_type }}</p>
       </div>
 
-      <!-- Render categories and items if they exist -->
+      <!-- Render categories and items recursively -->
       <div v-if="menuCategories.length > 0" class="menu-categories">
         <div
           v-for="category in menuCategories"
@@ -23,7 +26,6 @@
           class="category"
         >
           <h2>{{ category.name }}</h2>
-          <!-- List items for this category -->
           <ul>
             <li v-for="item in categorizedItems[category.id]" :key="item.id">
               <strong>{{ item.name }}</strong>
@@ -34,7 +36,6 @@
                 >(Family: ${{ item.family_price }})</span
               >
 
-              <!-- Ingredients -->
               <ul v-if="item.ingredients.length > 0">
                 <li v-for="ingredient in item.ingredients" :key="ingredient.id">
                   - {{ ingredient.name }}
@@ -61,7 +62,6 @@
                     >(Family: ${{ item.family_price }})</span
                   >
 
-                  <!-- Ingredients -->
                   <ul v-if="item.ingredients.length > 0">
                     <li
                       v-for="ingredient in item.ingredients"
@@ -83,7 +83,7 @@
       </div>
     </div>
 
-    <!-- If the menu page is missing, decide what to show -->
+    <!-- If the menu page is missing -->
     <div v-else>
       <p v-if="isOwner">
         This page doesn't exist yet. You can create it in the Admin Dashboard.
@@ -94,7 +94,10 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { ref, computed } from "vue";
+import EditableSections from "@/components/restaurant/menu/EditableSections.vue";
+import { defineProps, defineEmits } from "vue";
+import { useRestaurantStore } from "@/stores/restaurantStore";
 
 const props = defineProps({
   restaurantData: { type: Object, required: true },
@@ -102,43 +105,78 @@ const props = defineProps({
   isOwner: { type: Boolean, default: false },
 });
 
-// Check if the menu page is actually "found" or "missing"
+const restaurantStore = useRestaurantStore();
+const editMode = ref(false);
+const changesMade = ref(false);
+
+// Editable sections
+const editableSections = ref([...(props.restaurantData?.menu?.sections || [])]);
+const menuCategories = computed(
+  () => props.restaurantData.menu?.categories || []
+);
+const menuItems = computed(() => props.restaurantData.menu?.items || []);
 const pageIsFound = computed(() => props.pageStatus.menu === "found");
 
-// Extract menu data if it's "found"
-const menuData = computed(() => props.restaurantData.menu || {});
-
-// Sections
-const menuSections = computed(() => menuData.value.sections || []);
-
-// Categories & Items
-const menuCategories = computed(() => menuData.value.categories || []);
-const menuItems = computed(() => menuData.value.items || []);
-
-// Helper: Map categories to their items (including child categories)
+// Categorized items mapping
 const categorizedItems = computed(() => {
+  if (!menuCategories.value || !menuItems.value) return {};
   const mapping = {};
 
-  // Recursive function
-  const mapItemsToCategory = (category) => {
-    // Items that belong to this category
+  menuCategories.value.forEach((category) => {
     mapping[category.id] = menuItems.value.filter(
       (item) => item.category_id === category.id
     );
 
-    // Child categories
-    if (category.children && category.children.length > 0) {
-      category.children.forEach((child) => {
-        mapItemsToCategory(child);
+    // Recursive mapping for child categories
+    const mapChildItems = (childCategories) => {
+      childCategories.forEach((child) => {
+        mapping[child.id] = menuItems.value.filter(
+          (item) => item.category_id === child.id
+        );
+        if (child.children && child.children.length > 0) {
+          mapChildItems(child.children);
+        }
       });
+    };
+
+    if (category.children && category.children.length > 0) {
+      mapChildItems(category.children);
     }
-  };
-
-  // For each top-level category, map items recursively
-  menuCategories.value.forEach((category) => {
-    mapItemsToCategory(category);
   });
-
   return mapping;
 });
+
+// Toggles edit mode
+const toggleEditMode = () => {
+  editMode.value = !editMode.value;
+};
+
+// Sets changesMade to true on any user interaction
+const onInputChange = () => {
+  changesMade.value = true;
+};
+
+const updateEditableSections = (newSections) => {
+  editableSections.value = newSections;
+  changesMade.value = true;
+};
+
+// Saves the updated sections
+const saveSections = async () => {
+  try {
+    const slug = restaurantStore.currentSlug;
+    const pageName = "menu";
+    await restaurantStore.updateSections(
+      slug,
+      pageName,
+      editableSections.value
+    );
+    alert("Sections updated successfully!");
+    changesMade.value = false; // Reset changes
+    editMode.value = false; // Disable edit mode after save
+  } catch (error) {
+    console.error("Failed to update sections:", error.message);
+    alert("Failed to update sections.");
+  }
+};
 </script>

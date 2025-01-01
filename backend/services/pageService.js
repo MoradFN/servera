@@ -1,4 +1,3 @@
-// services/pageService.js
 import {
   createPage,
   insertSections,
@@ -10,9 +9,12 @@ import {
   findIngredientsByMenuItems,
   findMenuCategoriesBySlug,
   findMenuItemsBySlug,
+  upsertCategories,
+  upsertMenuItems,
 } from "../models/menuModel.js";
 
 import { findRestaurantBySlug } from "../models/restaurantModel.js";
+import pool from "../config/database.js";
 
 ////
 // Fetch a page and its sections
@@ -128,4 +130,34 @@ export const updatePageSections = async (slug, pageName, sections) => {
   await updateSections(page.id, sections);
 
   return { message: "Sections updated successfully." };
+};
+/// MENU CAT AND ITEMS / INGREDIENTS, BULK UPDATES.
+export const updateMenuData = async (slug, categories, items) => {
+  const restaurant = await findRestaurantBySlug(slug);
+  if (!restaurant) throw new Error(`Restaurant '${slug}' not found.`);
+
+  // Possibly check if a "menu" page record exists or create one
+  const page = await findPageByName(restaurant.id, "menu");
+  if (!page) throw new Error("Menu page not found for this restaurant.");
+
+  // Start transaction
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    // 1. Update categories
+    await upsertCategories(connection, restaurant.id, categories);
+
+    // 2. Update menu items (with ingredients) <--- this doesn't exist yet
+    await upsertMenuItems(connection, restaurant.id, items);
+
+    await connection.commit();
+  } catch (err) {
+    await connection.rollback();
+    throw err;
+  } finally {
+    connection.release();
+  }
+
+  return { message: "Menu data updated successfully." };
 };
