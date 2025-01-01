@@ -46,11 +46,12 @@
       </div>
     </div>
     <button @click="addCategory">Add Category</button>
-    <button @click="saveCategories">Save Categories</button>
+    <button @click="saveMenuData">Save Menu</button>
 
     <!-- Debugging/Testing Section -->
     <h3>Debugging</h3>
     <pre>{{ categories }}</pre>
+    <pre>{{ items }}</pre>
   </div>
 </template>
 
@@ -63,40 +64,44 @@ const props = defineProps({
     type: Array,
     required: true,
   },
+  initialItems: {
+    type: Array,
+    required: true,
+  },
   slug: {
     type: String,
     required: true,
   },
 });
 
-const emit = defineEmits(["categoriesUpdated"]);
+const emit = defineEmits(["categoriesUpdated", "itemsUpdated"]);
 
 const restaurantStore = useRestaurantStore();
 
 const categories = ref([...props.initialCategories]);
+const items = ref([...props.initialItems]);
 
-// Method to add a new category
+// Add a new category
 const addCategory = () => {
   categories.value.push({
     id: null,
     parent_id: null,
     name: "",
     display_order: categories.value.length + 1,
-    children: [], // Ensure new categories can have children
+    children: [],
   });
 };
 
-// Method to remove a category
+// Remove a category
 const removeCategory = (parentCategories, category) => {
   parentCategories.splice(parentCategories.indexOf(category), 1);
 };
 
-// Method to move a category up or down
+// Move a category up or down
 const moveCategory = (parentCategories, index, direction) => {
   const newIndex = index + direction;
   if (newIndex < 0 || newIndex >= parentCategories.length) return;
 
-  // Swap categories
   const [movedCategory] = parentCategories.splice(index, 1);
   parentCategories.splice(newIndex, 0, movedCategory);
 
@@ -106,14 +111,19 @@ const moveCategory = (parentCategories, index, direction) => {
   });
 };
 
-// Save the categories to the server
-const saveCategories = async () => {
+// Save the menu data (categories and items) to the server
+const saveMenuData = async () => {
   try {
-    await restaurantStore.updateMenuCategories(props.slug, categories.value);
+    await restaurantStore.updateMenuData(
+      props.slug,
+      categories.value,
+      items.value
+    );
     emit("categoriesUpdated", categories.value);
-    alert("Categories saved successfully!");
+    emit("itemsUpdated", items.value);
+    alert("Menu saved successfully!");
   } catch (error) {
-    console.error("Failed to save categories:", error.message);
+    console.error("Failed to save menu:", error.message);
   }
 };
 
@@ -125,7 +135,7 @@ const onChildCategoriesUpdated = (parentCategory) => (updatedChildren) => {
 
 // Placeholder for input change logging
 const onInputChange = () => {
-  console.log("Category changed.");
+  console.log("Menu data changed.");
 };
 </script>
 
