@@ -1,32 +1,35 @@
 <template>
   <div class="manage-categories">
     <h2>Manage Categories</h2>
-    <draggable
-      v-model="categories"
-      @end="onDragEnd"
-      class="category-list"
-      handle=".drag-handle"
+    <div
+      v-for="(category, index) in categories"
+      :key="category.id || category.name"
+      class="category-item"
     >
-      <div
-        v-for="category in categories"
-        :key="category.id || category.name"
-        class="category-item"
-      >
-        <div class="drag-handle">☰</div>
-        <input
-          v-model="category.name"
-          placeholder="Category Name"
-          @input="onInputChange"
-        />
-        <input
-          type="number"
-          v-model.number="category.display_order"
-          placeholder="Display Order"
-          @input="onInputChange"
-        />
+      <input
+        v-model="category.name"
+        placeholder="Category Name"
+        @input="onInputChange"
+      />
+      <input
+        type="number"
+        v-model.number="category.display_order"
+        placeholder="Display Order"
+        @input="onInputChange"
+      />
+      <div class="buttons">
+        <button :disabled="index === 0" @click="moveCategory(index, -1)">
+          ↑
+        </button>
+        <button
+          :disabled="index === categories.length - 1"
+          @click="moveCategory(index, 1)"
+        >
+          ↓
+        </button>
         <button @click="removeCategory(category)">Remove</button>
       </div>
-    </draggable>
+    </div>
     <button @click="addCategory">Add Category</button>
     <button @click="saveCategories">Save Categories</button>
 
@@ -38,10 +41,7 @@
 
 <script setup>
 import { ref } from "vue";
-import { VueDraggableNext } from "vue-draggable-next";
 import { useRestaurantStore } from "@/stores/restaurantStore";
-
-const draggable = VueDraggableNext;
 
 const props = defineProps({
   initialCategories: {
@@ -59,8 +59,8 @@ const emit = defineEmits(["categoriesUpdated"]);
 const restaurantStore = useRestaurantStore();
 
 const categories = ref([...props.initialCategories]);
-const onInputChange = () => console.log("Category changed.");
 
+// Method to add a new category
 const addCategory = () => {
   categories.value.push({
     id: null,
@@ -70,16 +70,27 @@ const addCategory = () => {
   });
 };
 
+// Method to remove a category
 const removeCategory = (category) => {
   categories.value = categories.value.filter((c) => c !== category);
 };
 
-const onDragEnd = () => {
-  categories.value.forEach((category, index) => {
-    category.display_order = index + 1;
+// Method to move a category up or down
+const moveCategory = (index, direction) => {
+  const newIndex = index + direction;
+  if (newIndex < 0 || newIndex >= categories.value.length) return;
+
+  // Swap categories
+  const [movedCategory] = categories.value.splice(index, 1);
+  categories.value.splice(newIndex, 0, movedCategory);
+
+  // Update display_order
+  categories.value.forEach((category, idx) => {
+    category.display_order = idx + 1;
   });
 };
 
+// Save the categories to the server
 const saveCategories = async () => {
   try {
     await restaurantStore.updateMenuCategories(props.slug, categories.value);
@@ -88,6 +99,11 @@ const saveCategories = async () => {
   } catch (error) {
     console.error("Failed to save categories:", error.message);
   }
+};
+
+// Placeholder for input change logging
+const onInputChange = () => {
+  console.log("Category changed.");
 };
 </script>
 
@@ -103,8 +119,9 @@ const saveCategories = async () => {
   margin-bottom: 0.5rem;
 }
 
-.drag-handle {
-  cursor: grab;
+.buttons {
+  display: flex;
+  gap: 0.5rem;
 }
 
 pre {
