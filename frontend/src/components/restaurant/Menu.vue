@@ -23,12 +23,14 @@
 
       <!-- Render MenuSections only in view mode -->
       <MenuSections v-if="!editMode" :sections="menuSections" />
+    </div>
 
-      <!-- Render ManageCategories in edit mode -->
+    <!-- Remder and Use the ManageCategories component, if owner och if edit mode -->
+    <div v-if="isOwner && editMode">
       <ManageCategories
-        v-if="editMode"
         :initialCategories="menuCategories"
-        :slug="currentSlug"
+        :categorizedItems="categorizedItems"
+        :slug="slug"
         @categoriesUpdated="onCategoriesUpdated"
       />
     </div>
@@ -54,6 +56,7 @@ export default {
     EditableSections,
     MenuSections,
     MenuCategories,
+    ManageCategories,
   },
   props: {
     isOwner: {
