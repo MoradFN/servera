@@ -1,4 +1,3 @@
-// services/pageService.js
 import {
   createPage,
   insertSections,
@@ -11,9 +10,11 @@ import {
   findMenuCategoriesBySlug,
   findMenuItemsBySlug,
   upsertCategories,
+  upsertMenuItems,
 } from "../models/menuModel.js";
 
 import { findRestaurantBySlug } from "../models/restaurantModel.js";
+import pool from "../config/database.js";
 
 ////
 // Fetch a page and its sections
