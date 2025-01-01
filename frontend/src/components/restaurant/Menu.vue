@@ -20,10 +20,18 @@
         :editMode="editMode"
         @change="onInputChange"
       />
-    </div>
 
-    <!-- Render MenuSections only in view mode -->
-    <MenuSections v-if="!editMode" :sections="menuSections" />
+      <!-- Render MenuSections only in view mode -->
+      <MenuSections v-if="!editMode" :sections="menuSections" />
+
+      <!-- Render ManageCategories in edit mode -->
+      <ManageCategories
+        v-if="editMode"
+        :initialCategories="menuCategories"
+        :slug="currentSlug"
+        @categoriesUpdated="onCategoriesUpdated"
+      />
+    </div>
 
     <!-- Use the MenuCategories component -->
     <MenuCategories
@@ -38,6 +46,7 @@ import { computed, ref, watchEffect } from "vue";
 import { useRestaurantStore } from "@/stores/restaurantStore";
 import EditableSections from "@/components/restaurant/menu/EditableSections.vue";
 import MenuSections from "@/components/restaurant/menu/MenuSections.vue";
+import ManageCategories from "@/components/restaurant/menu/ManageCategories.vue";
 import MenuCategories from "@/components/restaurant/menu/MenuCategories.vue";
 
 export default {
@@ -70,7 +79,6 @@ export default {
     watchEffect(() => {
       editableSections.value = JSON.parse(JSON.stringify(menuSections.value));
     });
-
     // Map categories to items, including parent and child categories
     const categorizedItems = computed(() => {
       const mapping = {};
@@ -95,9 +103,14 @@ export default {
 
       return mapping;
     });
+
     // Methods
     const toggleEditMode = () => {
       editMode.value = !editMode.value;
+    };
+
+    const onCategoriesUpdated = (updatedCategories) => {
+      store.restaurantData.menu.categories = updatedCategories;
     };
 
     const onInputChange = () => {
@@ -125,6 +138,7 @@ export default {
       toggleEditMode,
       onInputChange,
       saveSections,
+      onCategoriesUpdated,
     };
   },
 };
