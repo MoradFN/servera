@@ -1,6 +1,6 @@
 <template>
   <div>
-    <!-- Render sections dynamically -->
+    <!-- Loop through sections and render dynamically -->
     <div v-for="section in sections" :key="section.section_order">
       <h1 v-if="section.section_type === 'title'">{{ section.content }}</h1>
       <p v-else-if="section.section_type === 'text'">{{ section.content }}</p>

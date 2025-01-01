@@ -12,7 +12,6 @@
       class="editable-section"
       :class="{ dashed: editMode }"
     >
-      <!-- Drag Handle and Section Type Selector -->
       <div v-if="editMode" class="section-controls">
         <span class="drag-handle">☰</span>
         <select v-model="section.section_type" @change="onChange">
@@ -25,7 +24,6 @@
         </button>
       </div>
 
-      <!-- Editable Content -->
       <template v-if="editMode">
         <div v-if="section.section_type === 'title'">
           <input
@@ -53,7 +51,6 @@
         </div>
       </template>
 
-      <!-- Read-Only Content -->
       <template v-else>
         <component :is="getSectionTag(section.section_type)">
           {{ section.content }}
@@ -62,7 +59,7 @@
     </div>
   </draggable>
   <div v-if="editMode" class="add-section-container">
-    <button class="add-section-button" @click="addSection">Add Section</button>
+    <button @click="addSection">Add Section</button>
   </div>
 </template>
 
@@ -87,19 +84,13 @@ const editableSections = computed({
 const emitUpdate = (value) => {
   editableSections.value = value;
 };
-// const onDragEnd = () => {
-//   editableSections.value.forEach((section, index) => {
-//     section.section_order = index + 1;
-//   });
-//   emit("change");
-// };
-//NEW
+
 const onDragEnd = () => {
   editableSections.value.forEach((section, index) => {
-    section.section_order = index + 1; // Update the order
+    section.section_order = index + 1;
   });
-  emit("update:modelValue", editableSections.value); // Emit updated sections
-  emit("change"); // Notify parent of changes
+  emit("update:modelValue", editableSections.value);
+  emit("change");
 };
 
 const addSection = () => {
