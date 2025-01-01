@@ -1,7 +1,7 @@
 <template>
   <draggable
     :modelValue="editableSections"
-    @update:modelValue="onUpdate"
+    @update:modelValue="emitUpdate"
     @end="onDragEnd"
     class="draggable-list"
     handle=".drag-handle"
@@ -69,6 +69,7 @@
 <script setup>
 import { computed } from "vue";
 import { VueDraggableNext } from "vue-draggable-next";
+
 const draggable = VueDraggableNext;
 
 const props = defineProps({
@@ -83,6 +84,9 @@ const editableSections = computed({
   set: (value) => emit("update:modelValue", value),
 });
 
+const emitUpdate = (value) => {
+  editableSections.value = value;
+};
 // const onDragEnd = () => {
 //   editableSections.value.forEach((section, index) => {
 //     section.section_order = index + 1;

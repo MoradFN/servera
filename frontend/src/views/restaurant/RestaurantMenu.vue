@@ -14,7 +14,6 @@
         <EditableSections
           v-model="editableSections"
           :editMode="editMode"
-          @update="updateEditableSections"
           @change="onInputChange"
         />
       </div>

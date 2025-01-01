@@ -141,6 +141,32 @@ export const useRestaurantStore = defineStore("restaurant", {
       }
     },
 
+    // async updateMenuData(slug, categories, items) {
+    //   try {
+    //     // Make the PUT request to your new endpoint
+    //     const response = await axios.put(`/pages/${slug}/menu`, {
+    //       categories,
+    //       items,
+    //     });
+
+    //     if (response.data.success) {
+    //       // Optionally refresh or merge data in the store
+    //       // e.g., re-fetch restaurant data to get the updated menu
+    //       await this.fetchRestaurantData(slug);
+
+    //       console.log("✅ Menu data updated successfully via store.");
+    //       return response.data;
+    //     } else {
+    //       throw new Error(
+    //         response.data.message || "Failed to update menu data."
+    //       );
+    //     }
+    //   } catch (error) {
+    //     console.error("Error in updateMenuData:", error.message);
+    //     throw error;
+    //   }
+    // },
+
     resetStore() {
       this.restaurantData = {};
       this.pageStatus = {};
