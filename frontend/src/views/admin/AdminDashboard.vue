@@ -189,7 +189,21 @@ export default {
       };
       window.location.href = routes[pageName];
     };
-
+    const logout = async () => {
+      try {
+        await axios.post(
+          "http://localhost:8083/api/auth/logout",
+          {},
+          {
+            withCredentials: true,
+          }
+        );
+        router.push("/login");
+      } catch (error) {
+        console.error("Logout error:", error);
+        alert("Failed to log out. Please try again.");
+      }
+    };
     // Fetch authentication and ownership status on mount
     onMounted(async () => {
       try {
@@ -205,6 +219,7 @@ export default {
     });
 
     return {
+      logout,
       pages,
       sections,
       addSection,
