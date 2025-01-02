@@ -1,7 +1,6 @@
 <template>
   <div class="manage-categories">
     <h2 class="section-title">Manage Categories</h2>
-
     <!-- Loop over categories -->
     <div
       v-for="(cat, idx) in categories"
