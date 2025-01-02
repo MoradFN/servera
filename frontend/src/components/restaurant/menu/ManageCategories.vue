@@ -1,7 +1,6 @@
 <template>
   <div class="manage-categories">
-    <!-- Instead of a single static heading,
-         each category now has its own "Manage {{ cat.name }}" heading -->
+    <!-- Loop over categories -->
     <div
       v-for="(cat, idx) in categories"
       :key="cat.id ?? 'cat-' + idx"
@@ -82,26 +81,29 @@
         </button>
       </div>
 
-      <!-- If it has children, recurse with the same 'categories' reference -->
+      <!-- Recurse if children exist -->
       <div v-if="cat.children?.length" class="child-categories">
-        <!-- Recurse to handle subcategories -->
         <ManageCategories
           :categories="cat.children"
           :allCategoriesFlat="allCategoriesFlat"
           :slug="slug"
+          :level="level + 1"
           @categoriesChanged="emitCategoriesChanged"
         />
       </div>
     </div>
 
-    <!-- Add top-level category -->
-    <button class="add-btn" @click="addCategory">+ Add Category</button>
+    <!-- Show the Add button only if level===0 (top-level) -->
+    <button v-if="level === 0" class="add-btn" @click="addCategory">
+      + Add Category
+    </button>
 
-    <!-- Debug section -->
+    <!-- Comment out or remove the debug section if you don't want it displayed
     <div class="debug-section">
       <h4>Debug Data</h4>
       <pre>{{ categories }}</pre>
     </div>
+    -->
   </div>
 </template>
 
@@ -112,6 +114,7 @@ const props = defineProps({
   categories: { type: Array, required: true },
   allCategoriesFlat: { type: Array, required: true },
   slug: { type: String, required: true },
+  level: { type: Number, default: 0 }, // 0 => top-level, 1+ => child
 });
 
 const emit = defineEmits(["categoriesChanged"]);
@@ -152,6 +155,7 @@ function moveCategory(parentCats, index, direction) {
   if (newIndex < 0 || newIndex >= parentCats.length) return;
   const [movedCat] = parentCats.splice(index, 1);
   parentCats.splice(newIndex, 0, movedCat);
+
   // reassign display_order
   parentCats.forEach((c, i) => {
     c.display_order = i + 1;
@@ -160,7 +164,7 @@ function moveCategory(parentCats, index, direction) {
 }
 
 /**
- * Exclude 'cat' and its descendants from valid parents, to avoid cycles.
+ * Exclude 'cat' and its descendants from valid parents to avoid cycles.
  */
 function validParentsFor(cat) {
   const invalidIds = new Set();
@@ -176,7 +180,7 @@ function gatherIds(cat, set) {
 
 /**
  * If newVal='', cat.parent_id=null => forcibly re-tree top-level
- * Else parse the parent's ID => re-tree cat under that parent's children
+ * Otherwise parse parent's ID => re-tree cat under parent's children
  */
 function onChangeParent(e, cat) {
   const newVal = e.target.value;
@@ -220,15 +224,18 @@ function detachFromCurrentParent(cat) {
 </script>
 
 <style scoped>
-/* Container for the entire manage categories UI */
+/* 
+  Overall container 
+  Increased max-width for more "air," bigger container 
+*/
 .manage-categories {
   background-color: #fefefe;
   border: 1px solid #ccc;
-  padding: 2rem;
+  padding: 3rem; /* More vertical/horizontal space */
   border-radius: 8px;
-  max-width: 900px; /* Wider container for more "air" */
+  max-width: 1100px; /* Wider container */
   margin: 2rem auto;
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
 }
 
 /* Each category block */
@@ -236,16 +243,16 @@ function detachFromCurrentParent(cat) {
   border: 1px solid #aaa;
   background-color: #fafafa;
   border-radius: 6px;
-  margin-bottom: 2rem;
-  padding: 1rem 1.5rem;
+  margin-bottom: 3rem; /* More space between category blocks */
+  padding: 2rem;
 }
 
-/* Heading with "Manage {{ cat.name }}" */
+/* "Manage {{ cat.name }}" heading with bigger margin */
 .section-title {
   margin-top: 0;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
   color: #333;
-  font-size: 1.3rem;
+  font-size: 1.4rem;
   font-weight: 600;
 }
 
@@ -253,30 +260,32 @@ function detachFromCurrentParent(cat) {
 .category-fields {
   display: flex;
   flex-wrap: wrap;
-  gap: 1.5rem;
-  margin-bottom: 1rem;
+  gap: 2rem; /* More spacing */
+  margin-bottom: 1.5rem;
 }
 
 .input-group {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
-  min-width: 150px;
+  gap: 0.4rem;
+  min-width: 180px;
 }
 
 label {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   color: #555;
+  font-weight: 500;
 }
 
-/* Input styling */
+/* Input styling for text, number, select */
 .text-input,
 .number-input,
 .select-input {
-  padding: 0.5rem;
-  font-size: 0.9rem;
+  padding: 0.55rem 0.7rem;
+  font-size: 0.95rem;
   border: 1px solid #ccc;
   border-radius: 4px;
+  width: 100%;
 }
 
 /* 
@@ -285,16 +294,16 @@ label {
 .category-actions,
 .buttons {
   display: flex;
-  gap: 0.8rem;
+  gap: 1rem;
   margin-bottom: 1rem;
 }
 
-/* The top-level .child-categories are indented with dashed border */
+/* Indentation for child categories */
 .child-categories {
   border-left: 2px dashed #ccc;
-  margin-left: 1rem;
+  margin-left: 1.5rem;
   padding-left: 1.5rem;
-  margin-top: 1rem;
+  margin-top: 1.5rem;
 }
 
 /* Reusable button styling */
@@ -303,7 +312,7 @@ label {
   border: none;
   color: white;
   font-size: 0.9rem;
-  padding: 0.4rem 0.8rem;
+  padding: 0.5rem 0.8rem;
   border-radius: 4px;
   cursor: pointer;
   line-height: 1;
@@ -326,25 +335,24 @@ label {
   background-color: #b02a37;
 }
 
-/* Add category button */
+/* Show Add button only if level===0, i.e. top-level categories */
 .add-btn {
   display: inline-block;
-  margin-top: 1.5rem;
+  margin-top: 2rem;
   background-color: #28a745;
   color: #fff;
   border: none;
   font-size: 1rem;
-  padding: 0.5rem 1.5rem;
+  padding: 0.6rem 1.5rem;
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
-
 .add-btn:hover {
   background-color: #218838;
 }
 
-/* Debug area styling */
+/* Debug section - commented out
 .debug-section {
   margin-top: 2rem;
   background-color: #f9f9f9;
@@ -366,4 +374,5 @@ label {
   font-size: 0.85rem;
   line-height: 1.2;
 }
+*/
 </style>
