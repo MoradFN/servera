@@ -27,7 +27,17 @@ router.post(
   registerRestaurant
 );
 router.post("/login", runValidations(loginValidationRules), loginRestaurant);
-router.post("/logout", logout);
+router.post("/logout", (req, res) => {
+  // Clear the cookie by name
+  res.clearCookie("authToken", {
+    // Provide the same cookie options you used when setting it
+    httpOnly: true,
+    secure: false,
+    sameSite: "lax",
+  });
+
+  return res.json({ success: true, message: "Logged out successfully." });
+});
 
 // Protected route to check if logged in
 router.get("/is-authenticated", verifyJWT, checkAuth);

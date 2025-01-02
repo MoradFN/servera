@@ -6,9 +6,10 @@
       class="subscription-notification"
     >
       <p>
-        Subscribe to unlock premium features and manage your restaurant
+        Prenumerera för att låsa upp premiumfunktioner och hantera din
+        restaurang
         <button @click="router.push('/subscribe')" class="subscribe-button">
-          Subscribe Now
+          Prenumerera Nu!
         </button>
       </p>
     </div>

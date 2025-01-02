@@ -1,15 +1,22 @@
 <template>
   <div class="menu-item-card">
-    <h4>{{ item.name }}</h4>
-    <p v-if="item.standard_price">Price: ${{ item.standard_price }}</p>
-    <p v-if="item.family_price">Family Price: ${{ item.family_price }}</p>
+    <!-- Left Side: Pizza Name and Ingredients -->
+    <div class="item-details">
+      <h4 class="item-name">{{ item.name }}</h4>
+      <p class="item-ingredients">
+        {{ item.ingredients.map((ing) => ing.name).join(", ") }}
+      </p>
+    </div>
 
-    <!-- Render ingredients -->
-    <ul v-if="item.ingredients.length > 0">
-      <li v-for="ingredient in item.ingredients" :key="ingredient.id">
-        - {{ ingredient.name }}
-      </li>
-    </ul>
+    <!-- Right Side: Prices -->
+    <div class="item-prices">
+      <p v-if="item.standard_price" class="price">
+        Standard: {{ item.standard_price }} kr
+      </p>
+      <p v-if="item.family_price" class="price">
+        Family: {{ item.family_price }} kr
+      </p>
+    </div>
   </div>
 </template>
 
@@ -26,24 +33,49 @@ export default {
 </script>
 
 <style scoped>
+/* Main Card Styling */
 .menu-item-card {
-  border: 1px solid #ccc;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #003399; /* Dark blue background */
+  color: #fff; /* White text for contrast */
   padding: 1rem;
-  margin-bottom: 1rem;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1rem;
+  border: 1px solid #002266;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
-h4 {
-  margin: 0 0 0.5rem 0;
+
+/* Left Section: Item Details */
+.item-details {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
 }
-p {
-  margin: 0.5rem 0;
+
+.item-name {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin: 0;
+  text-transform: uppercase;
 }
-ul {
-  list-style: none;
-  padding: 0;
+
+.item-ingredients {
+  font-size: 0.9rem;
+  margin: 0.2rem 0;
+  color: #e6e6e6; /* Slightly lighter for distinction */
 }
-li {
-  margin: 0.25rem 0;
+
+/* Right Section: Prices */
+.item-prices {
+  text-align: right;
+}
+
+.price {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #ffd700; /* Golden yellow for price */
 }
 </style>

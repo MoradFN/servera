@@ -34,6 +34,10 @@ import { onMounted, ref } from "vue";
 import { loadStripe } from "@stripe/stripe-js";
 import { useToast } from "vue-toastification";
 import { useAuthStore } from "@/stores/authStore";
+import api from "@/services/axios";
+import { useRouter } from "vue-router";
+
+const router = useRouter();
 
 const stripeInstance = ref(null);
 const elements = ref(null);
@@ -46,17 +50,11 @@ const toast = useToast();
 
 onMounted(async () => {
   try {
-    const res = await fetch(
-      "http://localhost:8083/api/restaurants/restaurantdata",
-      {
-        credentials: "include",
-      }
-    );
-    const result = await res.json();
-    if (result.success) {
-      restaurantData.value = result.data;
+    const { data } = await api.get("/restaurants/restaurantdata");
+    if (data.success) {
+      restaurantData.value = data.data;
     } else {
-      console.error("Failed to fetch user data:", result.message);
+      console.error("Failed to fetch user data:", data.message);
     }
   } catch (err) {
     console.error("Error fetching user data:", err);
@@ -90,27 +88,21 @@ async function createSubscription() {
     }
 
     // Send the paymentMethod.id and the planId to the backend
-    const response = await fetch(
-      "http://localhost:8083/api/subscriptions/subscribe",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          planId: "price_1QSqYXGAJFpbqKlxqX1I7Qud",
-          paymentMethodId: paymentMethod.id,
-        }),
-      }
-    );
-    const result = await response.json();
+    const { data } = await api.post("/subscriptions/subscribe", {
+      planId: "price_1QSqYXGAJFpbqKlxqX1I7Qud",
+      paymentMethodId: paymentMethod.id,
+    });
 
-    if (result.success) {
+    if (data.success) {
       // Update the subscription status in the store
       await authStore.refreshSubscriptionStatus();
 
       toast.success("Subscription created successfully! 🎉");
+
+      // Redirect the user to their admin page
+      router.push(`/${restaurantData.value.slug}/admin`);
     } else {
-      throw new Error(result.message || "Subscription failed.");
+      throw new Error(data.message || "Subscription failed.");
     }
   } catch (err) {
     errorMessage.value = err.message || "An error occurred while subscribing.";
@@ -125,7 +117,7 @@ async function createSubscription() {
 <style scoped>
 .subscription-form {
   max-width: 500px;
-  margin: auto;
+  margin: 10rem auto 0;
   padding: 2rem;
   background: #f9f9f9;
   border-radius: 8px;

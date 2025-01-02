@@ -1,6 +1,6 @@
 <template>
   <div v-if="!loading">
-    <h1>Admin Dashboard</h1>
+    <h1 class="title">Admin Dashboard</h1>
 
     <!-- Check Ownership -->
     <div v-if="!isAuthenticated || !isOwner">
@@ -9,111 +9,151 @@
       </p>
       <p v-else>You are not authorized to manage this restaurant.</p>
     </div>
+
     <div v-else>
-      <p>Pages status:</p>
-      <ul>
-        <li v-for="(status, page) in pageStatus" :key="page">
-          {{ page.toUpperCase() }} - {{ status }}
-          <button v-if="status === 'missing'" @click="createThatPage(page)">
-            Create {{ page }} page
-          </button>
-        </li>
-      </ul>
-      <!-- Page Creation Form -->
-      <form @submit.prevent="submitPage" class="create-page-form">
-        <label for="pageName">Page Name:</label>
-        <select id="pageName" v-model="pageName" required>
-          <option value="" disabled>Select a page</option>
-          <option value="home">Home</option>
-          <option value="about">About</option>
-          <option value="menu">Menu</option>
-        </select>
-
-        <label for="sections">Sections:</label>
-        <div v-for="(section, index) in sections" :key="index" class="section">
-          <select v-model="section.section_type">
-            <option value="title">Title</option>
-            <option value="text">Text</option>
-          </select>
-          <input
-            v-model="section.content"
-            placeholder="Enter section content"
-            required
-          />
-          <input
-            v-model.number="section.section_order"
-            type="number"
-            min="1"
-            placeholder="Order"
-            required
-          />
-          <button type="button" @click="removeSection(index)">
-            Remove Section
-          </button>
+      <!-- Pages Status Section -->
+      <div class="pages-status-container">
+        <h2>Pages Status</h2>
+        <div class="pages-status">
+          <span
+            v-for="(status, page) in pageStatus"
+            :key="page"
+            :class="{
+              found: status === 'found',
+              missing: status === 'missing',
+            }"
+            class="page-status"
+          >
+            {{ page.toUpperCase() }} - {{ status }}
+          </span>
         </div>
-        <button type="button" @click="addSection">Add Section</button>
-        <button type="submit">Create Page</button>
-      </form>
+      </div>
 
-      <!-- Feedback Message -->
-      <p v-if="message" :class="{ success: isSuccess, error: !isSuccess }">
-        {{ message }}
-      </p>
+      <!-- Page Creation Forms -->
+      <div class="forms-container">
+        <div v-for="page in pages" :key="page.name" class="page-form-container">
+          <!-- If page exists, show the button -->
+          <button
+            v-if="pageStatus[page.name] === 'found'"
+            class="go-button"
+            @click="goToPage(page.name)"
+          >
+            Go to {{ page.label }} Page
+          </button>
+
+          <!-- If page doesn't exist, show the form -->
+          <form
+            v-else
+            @submit.prevent="submitPage(page.name)"
+            class="create-page-form"
+          >
+            <h2>Create {{ page.label }} Page</h2>
+            <label for="sections">Section</label>
+            <div
+              v-for="(section, index) in sections[page.name]"
+              :key="index"
+              class="section"
+            >
+              <select v-model="section.section_type" required>
+                <option value="title">Title</option>
+                <option value="text">Text</option>
+              </select>
+              <input
+                v-model="section.content"
+                placeholder="Enter section content"
+                required
+              />
+              <input
+                v-model.number="section.section_order"
+                type="number"
+                min="1"
+                placeholder="Order"
+                required
+              />
+              <button
+                type="button"
+                class="remove-button"
+                @click="removeSection(page.name, index)"
+              >
+                Remove Section
+              </button>
+            </div>
+            <div class="btn_form_gr_blue">
+              <button
+                type="button"
+                class="add-button"
+                @click="addSection(page.name)"
+              >
+                Add Section
+              </button>
+              <button type="submit" class="create-button">
+                Create {{ page.label }} Page
+              </button>
+            </div>
+          </form>
+          <p
+            v-if="page.message"
+            :class="{ success: page.isSuccess, error: !page.isSuccess }"
+          >
+            {{ page.message }}
+          </p>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
+import { ref, computed, onMounted } from "vue";
 import { useAuthStore } from "@/stores/authStore";
 import { useRestaurantStore } from "@/stores/restaurantStore";
-import { computed, ref, onMounted } from "vue";
 
 export default {
   setup() {
     const authStore = useAuthStore();
     const restaurantStore = useRestaurantStore();
 
-    // Reactive States
-    const pageName = ref("");
-    const sections = ref([
-      { section_type: "title", content: "", section_order: 1 },
+    // Page configurations for Home, About, and Menu
+    const pages = ref([
+      { name: "home", label: "Home", message: "", isSuccess: false },
+      { name: "about", label: "About", message: "", isSuccess: false },
+      { name: "menu", label: "Menu", message: "", isSuccess: false },
     ]);
-    const message = ref("");
-    const isSuccess = ref(false);
-    const loading = ref(true);
 
-    // Computed Properties
+    // Sections for each page
+    const sections = ref({
+      home: [{ section_type: "title", content: "", section_order: 1 }],
+      about: [{ section_type: "title", content: "", section_order: 1 }],
+      menu: [{ section_type: "title", content: "", section_order: 1 }],
+    });
+
+    const loading = ref(true);
     const isAuthenticated = computed(() => authStore.isAuthenticated);
     const isOwner = computed(() => authStore.isOwner);
     const pageStatus = computed(() => restaurantStore.pageStatus);
 
-    // Add a new section
-    const addSection = () => {
-      sections.value.push({
+    // Add a new section to the specified page
+    const addSection = (page) => {
+      sections.value[page].push({
         section_type: "text",
         content: "",
-        section_order: sections.value.length + 1,
+        section_order: sections.value[page].length + 1,
       });
     };
 
-    // Remove a section
-    const removeSection = (index) => {
-      sections.value.splice(index, 1);
+    // Remove a section from the specified page
+    const removeSection = (page, index) => {
+      sections.value[page].splice(index, 1);
     };
 
-    // Submit a new page
-    const submitPage = async () => {
-      try {
-        if (!pageName.value) {
-          message.value = "Please select a page name.";
-          isSuccess.value = false;
-          return;
-        }
+    // Submit a page
+    const submitPage = async (pageName) => {
+      const pageConfig = pages.value.find((page) => page.name === pageName);
 
+      try {
         const pageData = {
-          name: pageName.value,
-          sections: sections.value.map((section, index) => ({
-            page_name: pageName.value,
+          name: pageName,
+          sections: sections.value[pageName].map((section, index) => ({
             section_type: section.section_type,
             content: section.content,
             section_order: index + 1,
@@ -124,22 +164,47 @@ export default {
           authStore.user.slug,
           pageData
         );
-        isSuccess.value = response.success;
-        message.value = response.message;
+
+        pageConfig.isSuccess = response.success;
+        pageConfig.message = response.message;
 
         if (response.success) {
-          pageName.value = "";
-          sections.value = [
+          sections.value[pageName] = [
             { section_type: "title", content: "", section_order: 1 },
           ];
         }
       } catch (error) {
-        isSuccess.value = false;
-        message.value = error.message;
+        pageConfig.isSuccess = false;
+        pageConfig.message = error.message;
       }
     };
 
-    // Fetch Auth Status and Ownership on Mount
+    // Navigate to the page
+    const goToPage = (pageName) => {
+      const slug = authStore.user.slug;
+      const routes = {
+        home: `/${slug}`,
+        about: `/${slug}/about`,
+        menu: `/${slug}/menu`,
+      };
+      window.location.href = routes[pageName];
+    };
+    const logout = async () => {
+      try {
+        await axios.post(
+          "http://localhost:8083/api/auth/logout",
+          {},
+          {
+            withCredentials: true,
+          }
+        );
+        router.push("/login");
+      } catch (error) {
+        console.error("Logout error:", error);
+        alert("Failed to log out. Please try again.");
+      }
+    };
+    // Fetch authentication and ownership status on mount
     onMounted(async () => {
       try {
         await authStore.fetchAuthStatus();
@@ -154,16 +219,16 @@ export default {
     });
 
     return {
-      pageName,
+      logout,
+      pages,
       sections,
       addSection,
       removeSection,
       submitPage,
-      message,
-      isSuccess,
-      pageStatus,
+      goToPage,
       isAuthenticated,
       isOwner,
+      pageStatus,
       loading,
     };
   },
@@ -171,67 +236,179 @@ export default {
 </script>
 
 <style scoped>
-.create-page-form {
-  background-color: rgb(187, 180, 180);
+.title {
+  font-size: 2rem;
+  margin-bottom: 50px;
+  color: #333;
+}
+
+.title,
+h2 {
+  text-align: center;
+}
+
+.pages-status-container {
+  text-align: center;
   margin-bottom: 20px;
-  padding: 10px;
+}
+
+.pages-status-container h2 {
+  font-size: 1.8rem;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.pages-status {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.page-status {
+  font-size: 1rem;
+  font-weight: bold;
+  padding: 5px 15px;
   border-radius: 4px;
+}
+
+.page-status.found {
+  background-color: #d4edda; /* Green for found */
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.page-status.missing {
+  background-color: #f8d7da; /* Red for missing */
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.forms-container {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.page-form-container {
+  flex: 1;
+  min-width: 300px;
+}
+
+.create-page-form {
+  background-color: #f9f9f9;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.create-page-form h2 {
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+  color: #333;
 }
 
 .create-page-form label {
   display: block;
-  margin-bottom: 5px;
+  margin-bottom: 10px;
   font-weight: bold;
-  color: #333;
+  width: 100%;
 }
 
 .create-page-form input,
 .create-page-form select {
-  width: calc(100% - 12px);
+  width: 100%;
   margin-bottom: 10px;
-  padding: 5px;
+  padding: 10px;
   border: 1px solid #ccc;
   border-radius: 4px;
-  background-color: #f9f9f9;
-  color: #333;
 }
 
-.create-page-form input:focus,
-.create-page-form select:focus {
-  outline: none;
-  border-color: #007bff;
+.btn_form_gr_blue {
+  display: flex;
+  gap: 3vw;
 }
 
-.create-page-form button {
+.btn_form_gr_blue button {
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  color: #fff;
+  font-weight: bold;
+}
+
+.add-button {
   background-color: #007bff;
   color: white;
-  padding: 10px 20px;
   border: none;
+  padding: 10px 20px;
   border-radius: 4px;
   cursor: pointer;
+  margin-bottom: 10px;
 }
 
-.create-page-form button:hover {
-  background-color: #0069d9;
+.add-button:hover {
+  background-color: #0056b3;
+}
+
+.remove-button {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+.remove-button:hover {
+  background-color: #c82333;
+}
+
+.create-button {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+.create-button:hover {
+  background-color: #218838;
+}
+
+.section {
+  margin-bottom: 15px;
+  width: 100%;
 }
 
 .success {
   color: green;
   font-weight: bold;
-  margin-top: 10px;
+}
+.go-button {
+  background-color: #28a745; /* Green */
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  width: 100%;
+  text-align: center;
+}
+
+.go-button:hover {
+  background-color: #218838;
 }
 
 .error {
   color: red;
   font-weight: bold;
-  margin-top: 10px;
-}
-
-.section {
-  margin-bottom: 10px;
-  padding: 10px;
-  background-color: #f0f0f0;
-  border-radius: 4px;
-  border: 1px solid #ddd;
 }
 </style>

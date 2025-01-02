@@ -5,8 +5,9 @@
     <div v-if="pageIsFound">
       <!-- Edit Mode Toggle -->
       <div v-if="isOwner" class="owner-controls">
-        <button @click="toggleEditMode">
-          {{ editMode ? "Disable Edit Mode" : "Enable Edit Mode" }}
+        <button @click="toggleEditMode" class="edit-mode-button">
+          <i class="pi pi-file-edit"></i>
+          <span>{{ editMode ? " Close Edit" : "Edit page" }}</span>
         </button>
         <transition v-if="editMode" name="slide-fade">
           <!-- Save Changes Button only visible if changesMade -->
@@ -14,6 +15,14 @@
             <button @click="saveSections">Save Changes</button>
           </div>
         </transition>
+      </div>
+
+      <!-- Preview Indicator and Reverse Button -->
+      <div v-if="changesMade" class="preview-indicator-container">
+        <div v-if="!editMode" class="preview-indicator">
+          <h2>Preview</h2>
+        </div>
+        <button @click="refreshPage" class="reverse-button">Reverse</button>
       </div>
 
       <!-- Editable Sections with Drag-and-Drop -->
@@ -101,8 +110,10 @@
 import { ref, computed } from "vue";
 import { VueDraggableNext } from "vue-draggable-next";
 import { useRestaurantStore } from "@/stores/restaurantStore";
+import { useToast } from "vue-toastification";
 
 const draggable = VueDraggableNext;
+const toast = useToast();
 
 const props = defineProps({
   restaurantData: { type: Object, required: true },
@@ -165,13 +176,17 @@ const saveSections = async () => {
       pageName,
       editableSections.value
     );
-    alert("Sections updated successfully!");
+    toast.success("Sections updated successfully!");
     changesMade.value = false; // Reset changes
     editMode.value = false; // Disable edit mode after save
   } catch (error) {
     console.error("Failed to update sections:", error.message);
-    alert("Failed to update sections.");
+    toast.error("Failed to update sections.");
   }
+};
+
+const refreshPage = () => {
+  window.location.reload();
 };
 
 // Determines the correct HTML tag for the section type
@@ -190,12 +205,76 @@ const getSectionTag = (sectionType) => {
 </script>
 
 <style scoped>
+.edit-mode-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.preview-indicator-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 1000;
+}
+
+.preview-indicator {
+  background-color: #ffeb3b;
+  color: #333;
+  padding: 10px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.preview-indicator h2 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 0;
+}
+
+.reverse-button {
+  background-color: #f44336;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.5rem;
+  font-weight: bold;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.3s ease;
+}
+
+.reverse-button:hover {
+  background-color: #d32f2f;
+}
+
+/* Fade-in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Editable Sections */
 .editable-section {
   padding: 10px;
   margin-bottom: 10px;
   position: relative;
 }
+
 .editable-section.dashed {
   border: 1px dashed #007bff;
   border-radius: 4px;
@@ -206,6 +285,25 @@ const getSectionTag = (sectionType) => {
   display: flex;
   align-items: center;
   gap: 10px;
+  margin-bottom: 10px;
+}
+
+/* Text Styles */
+.editable-section h2,
+.editable-section p {
+  text-align: center;
+}
+
+.editable-section h2 {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.editable-section p {
+  font-size: 1.5rem;
+  color: #555;
   margin-bottom: 10px;
 }
 
@@ -230,6 +328,8 @@ const getSectionTag = (sectionType) => {
 .save-changes-bar {
   position: sticky;
   top: -50px;
+  margin-top: 30px;
+  border-radius: 7px;
   background-color: #007bff;
   color: white;
   text-align: center;
