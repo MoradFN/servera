@@ -34,6 +34,7 @@ import { onMounted, ref } from "vue";
 import { loadStripe } from "@stripe/stripe-js";
 import { useToast } from "vue-toastification";
 import { useAuthStore } from "@/stores/authStore";
+import api from "@/services/axios";
 
 const stripeInstance = ref(null);
 const elements = ref(null);
@@ -46,17 +47,11 @@ const toast = useToast();
 
 onMounted(async () => {
   try {
-    const res = await fetch(
-      "http://localhost:8083/api/restaurants/restaurantdata",
-      {
-        credentials: "include",
-      }
-    );
-    const result = await res.json();
-    if (result.success) {
-      restaurantData.value = result.data;
+    const { data } = await api.get("/restaurants/restaurantdata");
+    if (data.success) {
+      restaurantData.value = data.data;
     } else {
-      console.error("Failed to fetch user data:", result.message);
+      console.error("Failed to fetch user data:", data.message);
     }
   } catch (err) {
     console.error("Error fetching user data:", err);
@@ -78,7 +73,6 @@ async function createSubscription() {
   const authStore = useAuthStore();
 
   try {
-    // Create a PaymentMethod from the card element
     const { paymentMethod, error } =
       await stripeInstance.value.createPaymentMethod({
         type: "card",
@@ -89,28 +83,18 @@ async function createSubscription() {
       throw new Error("Payment method creation failed.");
     }
 
-    // Send the paymentMethod.id and the planId to the backend
-    const response = await fetch(
-      "http://localhost:8083/api/subscriptions/subscribe",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          planId: "price_1QSqYXGAJFpbqKlxqX1I7Qud",
-          paymentMethodId: paymentMethod.id,
-        }),
-      }
-    );
-    const result = await response.json();
+    const { data } = await api.post("/subscriptions/subscribe", {
+      planId: "price_1QSqYXGAJFpbqKlxqX1I7Qud",
+      paymentMethodId: paymentMethod.id,
+    });
 
-    if (result.success) {
+    if (data.success) {
       // Update the subscription status in the store
       await authStore.refreshSubscriptionStatus();
 
       toast.success("Subscription created successfully! 🎉");
     } else {
-      throw new Error(result.message || "Subscription failed.");
+      throw new Error(data.message || "Subscription failed.");
     }
   } catch (err) {
     errorMessage.value = err.message || "An error occurred while subscribing.";
