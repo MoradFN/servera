@@ -1,5 +1,5 @@
 <template>
-  <!-- 1) Top half: Edit "sections" if user is owner -->
+  <!-- Top area: sections editing if owner -->
   <div>
     <div v-if="isOwner" class="owner-controls">
       <button @click="toggleEditMode">
@@ -12,7 +12,7 @@
       </transition>
     </div>
 
-    <!-- Show EditableSections if editMode is ON -->
+    <!-- Show EditableSections if edit mode is ON -->
     <EditableSections
       v-if="isOwner && editMode"
       v-model="editableSections"
@@ -20,22 +20,30 @@
       @change="onInputChange"
     />
 
-    <!-- Show read-only sections if editMode is OFF -->
+    <!-- Show read-only sections if edit mode is OFF -->
     <MenuSections v-if="!editMode" :sections="menuSections" />
   </div>
 
-  <!-- 2) Middle: Manage categories/items if owner + edit mode -->
+  <!-- Middle: Manage categories if edit mode -->
   <div v-if="isOwner && editMode">
     <ManageCategories
       :initialCategories="menuCategories"
-      :initialItems="menuItems"
       :slug="slug"
       @categoriesUpdated="onCategoriesUpdated"
+    />
+  </div>
+
+  <!-- Middle: Manage items if edit mode -->
+  <div v-if="isOwner && editMode">
+    <ManageItems
+      :initialItems="menuItems"
+      :categories="menuCategories"
+      :slug="slug"
       @itemsUpdated="onItemsUpdated"
     />
   </div>
 
-  <!-- 3) Bottom: Always show read-only categories/items -->
+  <!-- Bottom: Always show read-only category->items tree -->
   <div>
     <MenuCategories
       :categories="menuCategories"
@@ -53,6 +61,7 @@ import EditableSections from "@/components/restaurant/menu/EditableSections.vue"
 import MenuSections from "@/components/restaurant/menu/MenuSections.vue";
 import MenuCategories from "@/components/restaurant/menu/MenuCategories.vue";
 import ManageCategories from "@/components/restaurant/menu/ManageCategories.vue";
+import ManageItems from "@/components/restaurant/menu/ManageItems.vue";
 
 export default {
   name: "Menu",
@@ -61,6 +70,7 @@ export default {
     MenuSections,
     MenuCategories,
     ManageCategories,
+    ManageItems,
   },
   props: {
     isOwner: { type: Boolean, required: true },
@@ -70,28 +80,24 @@ export default {
   setup(props) {
     const store = useRestaurantStore();
 
-    // For editing "sections"
+    // For sections
     const editMode = ref(false);
     const changesMade = ref(false);
     const editableSections = ref([]);
 
-    // Grab data from the store
+    // Data from store
     const slug = computed(() => store.currentSlug);
-    // "menu" object from the store
     const menuData = computed(() => store.restaurantData?.menu || {});
-
-    // Extract arrays from the menu object
     const menuSections = computed(() => menuData.value.sections || []);
     const menuCategories = computed(() => menuData.value.categories || []);
     const menuItems = computed(() => menuData.value.items || []);
 
-    // Keep a local copy of sections for drag-and-drop
+    // Keep local copy of "sections" for drag
     watchEffect(() => {
-      // Clone them so we don't mutate store data directly
       editableSections.value = JSON.parse(JSON.stringify(menuSections.value));
     });
 
-    // Build categoryId -> items array mapping
+    // Build categoryId -> array of items
     const categorizedItems = computed(() => {
       const mapping = {};
 
@@ -99,16 +105,13 @@ export default {
         mapping[cat.id] = menuItems.value.filter(
           (item) => item.category_id === cat.id
         );
-        if (cat.children) {
-          cat.children.forEach((child) => mapItems(child));
-        }
+        (cat.children || []).forEach(mapItems);
       }
-
-      menuCategories.value.forEach((cat) => mapItems(cat));
+      menuCategories.value.forEach(mapItems);
       return mapping;
     });
 
-    // Methods
+    // Toggle edit mode
     function toggleEditMode() {
       editMode.value = !editMode.value;
     }
@@ -117,9 +120,9 @@ export default {
       changesMade.value = true;
     }
 
+    // Save the updated sections
     async function saveSections() {
       try {
-        // Save the sections array to the store
         await store.updateSections(slug.value, "menu", editableSections.value);
         changesMade.value = false;
         editMode.value = false;
@@ -129,31 +132,29 @@ export default {
       }
     }
 
-    // Called when ManageCategories emits "categoriesUpdated"
+    // Called when ManageCategories emits categoriesUpdated
     function onCategoriesUpdated(updatedCategories) {
-      // Update store's categories
       store.restaurantData.menu.categories = updatedCategories;
       console.log("Updated Categories in parent:", updatedCategories);
     }
 
-    // Called when ManageCategories emits "itemsUpdated"
+    // Called when ManageItems emits itemsUpdated
     function onItemsUpdated(updatedItems) {
-      // Update store's items
       store.restaurantData.menu.items = updatedItems;
       console.log("Updated Items in parent:", updatedItems);
     }
 
     return {
-      // Refs & state
+      // State
       editMode,
       changesMade,
       editableSections,
 
-      // Computeds
+      // Data from store
       slug,
       menuSections,
       menuCategories,
-      menuItems, // NB: We must return this so we can pass it to ManageCategories
+      menuItems,
       categorizedItems,
 
       // Methods

@@ -41,21 +41,18 @@
       >
         <ManageCategories
           :initialCategories="cat.children"
-          :initialItems="items"
           :slug="slug"
           @categoriesUpdated="onChildCategoriesUpdated(cat)"
-          @itemsUpdated="onChildItemsUpdated"
         />
       </div>
     </div>
 
     <button @click="addCategory">Add Category</button>
-    <button @click="saveMenuData">Save Menu</button>
+    <button @click="saveCategories">Save Categories Only</button>
 
-    <!-- Debugging output -->
+    <!-- Debugging -->
     <h3>Debugging</h3>
     <pre>{{ categories }}</pre>
-    <pre>{{ items }}</pre>
   </div>
 </template>
 
@@ -63,28 +60,24 @@
 import { ref } from "vue";
 import { useRestaurantStore } from "@/stores/restaurantStore";
 
-// Define props
+// Props
 const props = defineProps({
   initialCategories: { type: Array, required: true },
-  initialItems: { type: Array, required: true },
   slug: { type: String, required: true },
 });
 
-// Define emits
-const emit = defineEmits(["categoriesUpdated", "itemsUpdated"]);
-
-// Make local copies to freely mutate
-const categories = ref([...props.initialCategories]);
-const items = ref([...props.initialItems]);
+// Emit
+const emit = defineEmits(["categoriesUpdated"]);
 
 const store = useRestaurantStore();
 
-// Basic input change log
+// Local categories
+const categories = ref([...props.initialCategories]);
+
 function onInputChange() {
-  console.log("Category changed.");
+  console.log("Category updated.");
 }
 
-// Add a new top-level category
 function addCategory() {
   categories.value.push({
     id: null,
@@ -95,7 +88,6 @@ function addCategory() {
   });
 }
 
-// Remove a category from an array
 function removeCategory(parentCats, cat) {
   const idx = parentCats.indexOf(cat);
   if (idx !== -1) {
@@ -103,7 +95,6 @@ function removeCategory(parentCats, cat) {
   }
 }
 
-// Move a category up/down in the array
 function moveCategory(parentCats, index, direction) {
   const newIndex = index + direction;
   if (newIndex < 0 || newIndex >= parentCats.length) return;
@@ -111,38 +102,28 @@ function moveCategory(parentCats, index, direction) {
   const [movedCat] = parentCats.splice(index, 1);
   parentCats.splice(newIndex, 0, movedCat);
 
-  // Update display_order in local
+  // update display_order
   parentCats.forEach((c, i) => {
     c.display_order = i + 1;
   });
 }
 
-// If a child ManageCategories updates categories
+// If child changes its categories
 function onChildCategoriesUpdated(parentCat) {
   return (updatedChildren) => {
     parentCat.children = updatedChildren;
-    // Emit the entire new categories array to the parent
     emit("categoriesUpdated", categories.value);
   };
 }
 
-// If a child ManageCategories updates items
-function onChildItemsUpdated(updatedItems) {
-  items.value = updatedItems;
-  emit("itemsUpdated", items.value);
-}
-
-// Press "Save Menu" => call store.updateMenuData with local categories & items
-async function saveMenuData() {
+async function saveCategories() {
   try {
-    await store.updateMenuData(props.slug, categories.value, items.value);
-    // After success, emit up to parent
+    // If we only want to update categories (and ignore items), we can do:
+    await store.updateMenuData(props.slug, categories.value, []);
     emit("categoriesUpdated", categories.value);
-    emit("itemsUpdated", items.value);
-
-    alert("Menu saved successfully!");
-  } catch (error) {
-    console.error("Failed to save menu:", error.message);
+    alert("Categories updated successfully!");
+  } catch (err) {
+    console.error("Failed to save categories:", err.message);
   }
 }
 </script>
