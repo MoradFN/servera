@@ -4,7 +4,7 @@
     <div v-if="pageIsFound">
       <!-- Edit Mode Toggle -->
       <div v-if="isOwner" class="owner-controls">
-        <button @click="toggleEditMode">
+        <button @click="toggleEditMode" class="edit-mode-button">
           {{ editMode ? "Disable Edit Mode" : "Enable Edit Mode" }}
         </button>
         <transition v-if="editMode" name="slide-fade">
@@ -100,8 +100,10 @@
 import { ref, computed } from "vue";
 import { VueDraggableNext } from "vue-draggable-next";
 import { useRestaurantStore } from "@/stores/restaurantStore";
+import { useToast } from "vue-toastification";
 
 const draggable = VueDraggableNext;
+const toast = useToast();
 
 const props = defineProps({
   restaurantData: { type: Object, required: true },
@@ -164,12 +166,12 @@ const saveSections = async () => {
       pageName,
       editableSections.value
     );
-    alert("Sections updated successfully!");
+    toast.success("Sections updated successfully!");
     changesMade.value = false; // Reset changes
     editMode.value = false; // Disable edit mode after save
   } catch (error) {
     console.error("Failed to update sections:", error.message);
-    alert("Failed to update sections.");
+    toast.error("Failed to update sections.");
   }
 };
 
@@ -189,6 +191,16 @@ const getSectionTag = (sectionType) => {
 </script>
 
 <style scoped>
+/* Edit Mode Button */
+.edit-mode-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
 /* Editable Sections */
 .editable-section {
   padding: 10px;
