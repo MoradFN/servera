@@ -43,6 +43,7 @@
         :categories="localCategories"
         :allCategoriesFlat="allCategoriesFlat"
         :slug="slug"
+        :level="0"
         @categoriesChanged="onCategoriesChanged"
       />
 
