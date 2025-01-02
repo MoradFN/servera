@@ -60,18 +60,9 @@ import { ref } from "vue";
 import { useRestaurantStore } from "@/stores/restaurantStore";
 
 const props = defineProps({
-  initialCategories: {
-    type: Array,
-    required: true,
-  },
-  initialItems: {
-    type: Array,
-    required: true,
-  },
-  slug: {
-    type: String,
-    required: true,
-  },
+  initialCategories: { type: Array, required: true },
+  initialItems: { type: Array, required: true },
+  slug: { type: String, required: true },
 });
 
 const emit = defineEmits(["categoriesUpdated", "itemsUpdated"]);
@@ -80,6 +71,9 @@ const restaurantStore = useRestaurantStore();
 
 const categories = ref([...props.initialCategories]);
 const items = ref([...props.initialItems]);
+
+//FALLBACK OM TOM?
+// const items = ref([...props.initialItems || []]);
 
 // Add a new category
 const addCategory = () => {

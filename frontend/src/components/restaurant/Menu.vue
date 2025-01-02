@@ -27,12 +27,14 @@
   </div>
 
   <!-- Remder and Use the ManageCategories component, if owner och if edit mode -->
+  <!-- :categorizedItems="categorizedItems" -->
   <div v-if="isOwner && editMode">
     <ManageCategories
       :initialCategories="menuCategories"
-      :categorizedItems="categorizedItems"
+      :initialItems="menuItems"
       :slug="slug"
       @categoriesUpdated="onCategoriesUpdated"
+      @itemsUpdated="onItemsUpdated"
     />
   </div>
   <div>
@@ -87,6 +89,7 @@ export default {
     const menuSections = computed(() => menuData.value.sections || []);
     const menuCategories = computed(() => menuData.value.categories || []);
     const menuItems = computed(() => menuData.value.items || []);
+    console.log("menuItems in Menu.vue:", menuItems.value);
 
     // Dynamically synchronize editableSections
     watchEffect(() => {
