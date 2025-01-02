@@ -24,7 +24,18 @@
       <!-- Page Creation Forms -->
       <div class="forms-container">
         <div v-for="page in pages" :key="page.name" class="page-form-container">
+          <!-- If page exists, show the button -->
+          <button
+            v-if="pageStatus[page.name] === 'found'"
+            class="go-button"
+            @click="goToPage(page.name)"
+          >
+            Go to {{ page.label }} Page
+          </button>
+
+          <!-- If page doesn't exist, show the form -->
           <form
+            v-else
             @submit.prevent="submitPage(page.name)"
             class="create-page-form"
           >
@@ -160,6 +171,17 @@ export default {
       }
     };
 
+    // Navigate to the page
+    const goToPage = (pageName) => {
+      const slug = authStore.user.slug;
+      const routes = {
+        home: `/${slug}`,
+        about: `/${slug}/about`,
+        menu: `/${slug}/menu`,
+      };
+      window.location.href = routes[pageName];
+    };
+
     // Fetch authentication and ownership status on mount
     onMounted(async () => {
       try {
@@ -180,6 +202,7 @@ export default {
       addSection,
       removeSection,
       submitPage,
+      goToPage,
       isAuthenticated,
       isOwner,
       pageStatus,
@@ -296,6 +319,21 @@ export default {
 .success {
   color: green;
   font-weight: bold;
+}
+.go-button {
+  background-color: #28a745; /* Green */
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  width: 100%;
+  text-align: center;
+}
+
+.go-button:hover {
+  background-color: #218838;
 }
 
 .error {
