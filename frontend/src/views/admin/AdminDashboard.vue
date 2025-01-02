@@ -48,7 +48,7 @@
             class="create-page-form"
           >
             <h2>Create {{ page.label }} Page</h2>
-            <label for="sections">Typ av sektion:</label>
+            <label for="sections">Section</label>
             <div
               v-for="(section, index) in sections[page.name]"
               :key="index"
@@ -60,7 +60,7 @@
               </select>
               <input
                 v-model="section.content"
-                placeholder="Ange sektionsinnehåll"
+                placeholder="Enter section content"
                 required
               />
               <input
