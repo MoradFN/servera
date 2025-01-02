@@ -22,46 +22,51 @@
       </ul>
 
       <!-- Page Creation Forms -->
-      <div v-for="page in pages" :key="page.name" class="page-form-container">
-        <h2>Create {{ page.label }} Page</h2>
-        <form @submit.prevent="submitPage(page.name)" class="create-page-form">
-          <label for="sections">Sections:</label>
-          <div
-            v-for="(section, index) in sections[page.name]"
-            :key="index"
-            class="section"
+      <div class="forms-container">
+        <div v-for="page in pages" :key="page.name" class="page-form-container">
+          <form
+            @submit.prevent="submitPage(page.name)"
+            class="create-page-form"
           >
-            <select v-model="section.section_type" required>
-              <option value="title">Title</option>
-              <option value="text">Text</option>
-            </select>
-            <input
-              v-model="section.content"
-              placeholder="Enter section content"
-              required
-            />
-            <input
-              v-model.number="section.section_order"
-              type="number"
-              min="1"
-              placeholder="Order"
-              required
-            />
-            <button type="button" @click="removeSection(page.name, index)">
-              Remove Section
+            <h2>Create {{ page.label }} Page</h2>
+            <label for="sections">Typ av sektion:</label>
+            <div
+              v-for="(section, index) in sections[page.name]"
+              :key="index"
+              class="section"
+            >
+              <select v-model="section.section_type" required>
+                <option value="title">Title</option>
+                <option value="text">Text</option>
+              </select>
+              <input
+                v-model="section.content"
+                placeholder="Ange sektionsinnehåll"
+                required
+              />
+              <input
+                v-model.number="section.section_order"
+                type="number"
+                min="1"
+                placeholder="Order"
+                required
+              />
+              <button type="button" @click="removeSection(page.name, index)">
+                Remove Section
+              </button>
+            </div>
+            <button type="button" @click="addSection(page.name)">
+              Add Section
             </button>
-          </div>
-          <button type="button" @click="addSection(page.name)">
-            Add Section
-          </button>
-          <button type="submit">Create {{ page.label }} Page</button>
-        </form>
-        <p
-          v-if="page.message"
-          :class="{ success: page.isSuccess, error: !page.isSuccess }"
-        >
-          {{ page.message }}
-        </p>
+            <button type="submit">Create {{ page.label }} Page</button>
+          </form>
+          <p
+            v-if="page.message"
+            :class="{ success: page.isSuccess, error: !page.isSuccess }"
+          >
+            {{ page.message }}
+          </p>
+        </div>
       </div>
     </div>
   </div>
@@ -173,8 +178,15 @@ export default {
 </script>
 
 <style scoped>
+.forms-container {
+  display: flex;
+  gap: 20px; /* Add spacing between forms */
+  flex-wrap: wrap; /* Allow forms to wrap on smaller screens */
+}
+
 .page-form-container {
-  margin-bottom: 30px;
+  flex: 1; /* Make forms take equal space */
+  min-width: 300px; /* Set a minimum width for each form */
 }
 
 .create-page-form {
@@ -183,12 +195,22 @@ export default {
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center-aligns the form content */
+}
+
+.create-page-form h2 {
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+  color: #333;
 }
 
 .create-page-form label {
   display: block;
   margin-bottom: 10px;
   font-weight: bold;
+  width: 100%;
 }
 
 .create-page-form input,
@@ -215,6 +237,7 @@ export default {
 
 .section {
   margin-bottom: 15px;
+  width: 100%;
 }
 
 .success {
