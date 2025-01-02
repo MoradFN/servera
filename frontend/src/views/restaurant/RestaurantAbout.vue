@@ -1,11 +1,15 @@
 <template>
-  <div>
+  <div class="about-page-container">
     <!-- If the about page is found, render the content -->
     <div v-if="pageIsFound">
+      <!-- Page Title -->
+      <!-- <h2 class="page-title">About Page</h2> -->
+
       <!-- Edit Mode Toggle -->
       <div v-if="isOwner" class="owner-controls">
         <button @click="toggleEditMode" class="edit-mode-button">
-          {{ editMode ? "Disable Edit Mode" : "Enable Edit Mode" }}
+          <i class="pi pi-file-edit"></i>
+          <span>{{ editMode ? " Edit Mode" : "Preview" }}</span>
         </button>
         <transition v-if="editMode" name="slide-fade">
           <!-- Save Changes Button only visible if changesMade -->
@@ -87,7 +91,7 @@
     </div>
 
     <!-- If about page is missing -->
-    <div v-else>
+    <div v-else class="missing-page-message">
       <p v-if="isOwner">
         This page doesn't exist yet. You can create it in the Admin Dashboard.
       </p>
@@ -207,6 +211,7 @@ const getSectionTag = (sectionType) => {
   margin-bottom: 10px;
   position: relative;
 }
+
 .editable-section.dashed {
   border: 1px dashed #007bff;
   border-radius: 4px;
@@ -217,6 +222,25 @@ const getSectionTag = (sectionType) => {
   display: flex;
   align-items: center;
   gap: 10px;
+  margin-bottom: 10px;
+}
+
+/* Text Styles */
+.editable-section h2,
+.editable-section p {
+  text-align: center;
+}
+
+.editable-section h2 {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.editable-section p {
+  font-size: 1.5rem;
+  color: #555;
   margin-bottom: 10px;
 }
 
