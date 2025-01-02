@@ -11,7 +11,7 @@ const isActiveLink = (routePath) => {
 <template>
   <nav class="navbar">
     <!-- Logo Image -->
-    <img :src="logo" alt="App Logo" class="logo" />
+    <!-- <img :src="logo" alt="App Logo" class="logo" /> -->
 
     <!-- Navigation Links -->
     <router-link to="/">Home</router-link>
