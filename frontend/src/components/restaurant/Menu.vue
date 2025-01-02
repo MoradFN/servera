@@ -1,4 +1,5 @@
 <template>
+  <!-- This top area handles sections editing (like before) -->
   <div>
     <!-- Editable Sections -->
     <div v-if="isOwner">
@@ -26,8 +27,11 @@
     <MenuSections v-if="!editMode" :sections="menuSections" />
   </div>
 
-  <!-- Remder and Use the ManageCategories component, if owner och if edit mode -->
-  <!-- :categorizedItems="categorizedItems" -->
+  <!-- 
+    ManageCategories for categories+items.
+    We pass initialCategories and initialItems from the store,
+    so the child doesn't get "undefined".
+  -->
   <div v-if="isOwner && editMode">
     <ManageCategories
       :initialCategories="menuCategories"
@@ -37,8 +41,9 @@
       @itemsUpdated="onItemsUpdated"
     />
   </div>
+
+  <!-- Always display the read-only category tree -->
   <div>
-    <!-- Use the MenuCategories component -->
     <MenuCategories
       :categories="menuCategories"
       :categorizedItems="categorizedItems"
@@ -55,6 +60,7 @@ import MenuCategories from "@/components/restaurant/menu/MenuCategories.vue";
 import ManageCategories from "@/components/restaurant/menu/ManageCategories.vue";
 
 export default {
+  name: "Menu",
   components: {
     EditableSections,
     MenuSections,
@@ -78,59 +84,57 @@ export default {
   setup(props) {
     const store = useRestaurantStore();
 
-    // State
+    // Local state for editing "sections"
     const editMode = ref(false);
     const changesMade = ref(false);
     const editableSections = ref([]);
 
-    // Computed properties
+    // Pull data from the store
     const slug = computed(() => store.currentSlug);
+
+    // The "menu" object from the store
     const menuData = computed(() => store.restaurantData?.menu || {});
+    // Grab arrays from that
     const menuSections = computed(() => menuData.value.sections || []);
     const menuCategories = computed(() => menuData.value.categories || []);
     const menuItems = computed(() => menuData.value.items || []);
-    console.log("menuItems in Menu.vue:", menuItems.value);
 
-    // Dynamically synchronize editableSections
+    // Keep a local copy of "sections" for drag-and-drop
     watchEffect(() => {
       editableSections.value = JSON.parse(JSON.stringify(menuSections.value));
     });
 
-    // Map categories to items, including parent and child categories
+    // Build a map: categoryId -> array of items
     const categorizedItems = computed(() => {
       const mapping = {};
 
-      // Recursive function to map items to a category and its children
-      const mapItemsToCategory = (category) => {
-        // Map items to the current category
-        mapping[category.id] = menuItems.value.filter(
-          (item) => item.category_id === category.id
+      const mapItemsToCategory = (cat) => {
+        // items for this category
+        mapping[cat.id] = menuItems.value.filter(
+          (item) => item.category_id === cat.id
         );
-
-        // If the category has children, map items for each child recursively
-        category.children.forEach((child) => {
-          mapItemsToCategory(child);
-        });
+        // map children recursively
+        if (cat.children) {
+          cat.children.forEach((child) => mapItemsToCategory(child));
+        }
       };
 
-      // Map items for all top-level categories (including their children recursively)
-      menuCategories.value.forEach((category) => {
-        mapItemsToCategory(category);
+      menuCategories.value.forEach((cat) => {
+        mapItemsToCategory(cat);
       });
-
       return mapping;
     });
 
     // Methods
-    const toggleEditMode = () => {
+    function toggleEditMode() {
       editMode.value = !editMode.value;
-    };
+    }
 
-    const onInputChange = () => {
+    function onInputChange() {
       changesMade.value = true;
-    };
+    }
 
-    const saveSections = async () => {
+    async function saveSections() {
       try {
         await store.updateSections(slug.value, "menu", editableSections.value);
         changesMade.value = false;
@@ -139,29 +143,43 @@ export default {
       } catch (error) {
         console.error("Failed to save sections:", error.message);
       }
-    };
+    }
 
-    const onCategoriesUpdated = (updatedCategories) => {
-      console.log("Updated Categories:", updatedCategories);
+    function onCategoriesUpdated(updatedCategories) {
+      // The child ManageCategories emits updated categories
       store.restaurantData.menu.categories = updatedCategories;
-    };
+      console.log("Updated Categories in parent:", updatedCategories);
+    }
+
+    function onItemsUpdated(updatedItems) {
+      // If you want to track updated items
+      store.restaurantData.menu.items = updatedItems;
+      console.log("Updated Items in parent:", updatedItems);
+    }
 
     return {
-      menuSections,
-      menuCategories,
-      categorizedItems,
       editMode,
       changesMade,
       editableSections,
       toggleEditMode,
       onInputChange,
       saveSections,
-      onCategoriesUpdated,
+
+      // For the rest of the template
       slug,
+      menuSections,
+      menuCategories,
+      menuItems, // <-- Now we return it so the template sees it
+      categorizedItems,
+
+      // Events
+      onCategoriesUpdated,
+      onItemsUpdated,
     };
   },
 };
 </script>
+
 <style scoped>
 .owner-controls {
   margin-bottom: 20px;

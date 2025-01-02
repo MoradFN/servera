@@ -1,19 +1,20 @@
 <template>
   <div class="manage-categories">
     <h2>Manage Categories</h2>
+    <!-- Loop over categories -->
     <div
-      v-for="(category, index) in categories"
-      :key="category.id || category.name"
+      v-for="(cat, index) in categories"
+      :key="cat.id ?? cat.name"
       class="category-item"
     >
       <input
-        v-model="category.name"
+        v-model="cat.name"
         placeholder="Category Name"
         @input="onInputChange"
       />
       <input
         type="number"
-        v-model.number="category.display_order"
+        v-model.number="cat.display_order"
         placeholder="Display Order"
         @input="onInputChange"
       />
@@ -30,25 +31,28 @@
         >
           ↓
         </button>
-        <button @click="removeCategory(categories, category)">Remove</button>
+        <button @click="removeCategory(categories, cat)">Remove</button>
       </div>
 
-      <!-- Render child categories recursively -->
+      <!-- Child categories -->
       <div
-        v-if="category.children && category.children.length > 0"
+        v-if="cat.children && cat.children.length > 0"
         class="child-categories"
       >
         <ManageCategories
-          :initialCategories="category.children"
+          :initialCategories="cat.children"
+          :initialItems="items"
           :slug="slug"
-          @categoriesUpdated="onChildCategoriesUpdated(category)"
+          @categoriesUpdated="onChildCategoriesUpdated(cat)"
+          @itemsUpdated="onChildItemsUpdated"
         />
       </div>
     </div>
+
     <button @click="addCategory">Add Category</button>
     <button @click="saveMenuData">Save Menu</button>
 
-    <!-- Debugging/Testing Section -->
+    <!-- Debugging -->
     <h3>Debugging</h3>
     <pre>{{ categories }}</pre>
     <pre>{{ items }}</pre>
@@ -59,24 +63,28 @@
 import { ref } from "vue";
 import { useRestaurantStore } from "@/stores/restaurantStore";
 
+// Props
 const props = defineProps({
   initialCategories: { type: Array, required: true },
   initialItems: { type: Array, required: true },
   slug: { type: String, required: true },
 });
 
+// Emits
 const emit = defineEmits(["categoriesUpdated", "itemsUpdated"]);
 
-const restaurantStore = useRestaurantStore();
-
+// Local copies
 const categories = ref([...props.initialCategories]);
 const items = ref([...props.initialItems]);
 
-//FALLBACK OM TOM?
-// const items = ref([...props.initialItems || []]);
+const restaurantStore = useRestaurantStore();
 
-// Add a new category
-const addCategory = () => {
+// Methods
+function onInputChange() {
+  console.log("Category changed.");
+}
+
+function addCategory() {
   categories.value.push({
     id: null,
     parent_id: null,
@@ -84,53 +92,61 @@ const addCategory = () => {
     display_order: categories.value.length + 1,
     children: [],
   });
-};
+}
 
-// Remove a category
-const removeCategory = (parentCategories, category) => {
-  parentCategories.splice(parentCategories.indexOf(category), 1);
-};
+function removeCategory(parentCats, cat) {
+  const idx = parentCats.indexOf(cat);
+  if (idx !== -1) {
+    parentCats.splice(idx, 1);
+  }
+}
 
-// Move a category up or down
-const moveCategory = (parentCategories, index, direction) => {
+function moveCategory(parentCats, index, direction) {
   const newIndex = index + direction;
-  if (newIndex < 0 || newIndex >= parentCategories.length) return;
+  if (newIndex < 0 || newIndex >= parentCats.length) return;
 
-  const [movedCategory] = parentCategories.splice(index, 1);
-  parentCategories.splice(newIndex, 0, movedCategory);
+  const [movedCategory] = parentCats.splice(index, 1);
+  parentCats.splice(newIndex, 0, movedCategory);
 
   // Update display_order
-  parentCategories.forEach((category, idx) => {
-    category.display_order = idx + 1;
+  parentCats.forEach((cat, i) => {
+    cat.display_order = i + 1;
   });
-};
+}
 
-// Save the menu data (categories and items) to the server
-const saveMenuData = async () => {
+// For child categories
+function onChildCategoriesUpdated(parentCat) {
+  return (updatedChildren) => {
+    parentCat.children = updatedChildren;
+    emit("categoriesUpdated", categories.value);
+  };
+}
+
+// For child items
+function onChildItemsUpdated(updatedItems) {
+  // If a child ManageCategories updates items, we share that upward
+  items.value = updatedItems;
+  emit("itemsUpdated", items.value);
+}
+
+async function saveMenuData() {
   try {
+    // We call the store's updateMenuData with local categories + items
     await restaurantStore.updateMenuData(
       props.slug,
       categories.value,
       items.value
     );
+
+    // Emit updated arrays to parent
     emit("categoriesUpdated", categories.value);
     emit("itemsUpdated", items.value);
+
     alert("Menu saved successfully!");
   } catch (error) {
     console.error("Failed to save menu:", error.message);
   }
-};
-
-// Handle updates from child categories
-const onChildCategoriesUpdated = (parentCategory) => (updatedChildren) => {
-  parentCategory.children = updatedChildren;
-  emit("categoriesUpdated", categories.value);
-};
-
-// Placeholder for input change logging
-const onInputChange = () => {
-  console.log("Menu data changed.");
-};
+}
 </script>
 
 <style scoped>
