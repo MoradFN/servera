@@ -1,7 +1,6 @@
 <template>
   <div class="manage-categories">
-    <h2>Manage Categories</h2>
-    <!-- Loop over categories -->
+    <h3>Manage Categories</h3>
     <div
       v-for="(cat, index) in categories"
       :key="cat.id ?? cat.name"
@@ -10,13 +9,13 @@
       <input
         v-model="cat.name"
         placeholder="Category Name"
-        @input="onInputChange"
+        @input="emitChanges"
       />
       <input
         type="number"
         v-model.number="cat.display_order"
         placeholder="Display Order"
-        @input="onInputChange"
+        @input="emitChanges"
       />
       <div class="buttons">
         <button
@@ -35,47 +34,34 @@
       </div>
 
       <!-- Recurse for child categories -->
-      <div
-        v-if="cat.children && cat.children.length > 0"
-        class="child-categories"
-      >
+      <div v-if="cat.children?.length" class="child-categories">
         <ManageCategories
           :initialCategories="cat.children"
-          :slug="slug"
-          @categoriesUpdated="onChildCategoriesUpdated(cat)"
+          @categoriesChanged="onChildUpdated(cat)"
         />
       </div>
     </div>
 
     <button @click="addCategory">Add Category</button>
-    <button @click="saveCategories">Save Categories Only</button>
 
-    <!-- Debugging -->
-    <h3>Debugging</h3>
+    <h4>Debug</h4>
     <pre>{{ categories }}</pre>
   </div>
 </template>
 
 <script setup>
 import { ref } from "vue";
-import { useRestaurantStore } from "@/stores/restaurantStore";
 
-// Props
 const props = defineProps({
   initialCategories: { type: Array, required: true },
-  slug: { type: String, required: true },
 });
+const emit = defineEmits(["categoriesChanged"]);
 
-// Emit
-const emit = defineEmits(["categoriesUpdated"]);
-
-const store = useRestaurantStore();
-
-// Local categories
 const categories = ref([...props.initialCategories]);
 
-function onInputChange() {
-  console.log("Category updated.");
+function emitChanges() {
+  // whenever user modifies a category, we emit the entire array
+  emit("categoriesChanged", categories.value);
 }
 
 function addCategory() {
@@ -86,45 +72,34 @@ function addCategory() {
     display_order: categories.value.length + 1,
     children: [],
   });
+  emitChanges();
 }
 
-function removeCategory(parentCats, cat) {
-  const idx = parentCats.indexOf(cat);
+function removeCategory(parent, cat) {
+  const idx = parent.indexOf(cat);
   if (idx !== -1) {
-    parentCats.splice(idx, 1);
+    parent.splice(idx, 1);
   }
+  emitChanges();
 }
 
-function moveCategory(parentCats, index, direction) {
-  const newIndex = index + direction;
-  if (newIndex < 0 || newIndex >= parentCats.length) return;
-
-  const [movedCat] = parentCats.splice(index, 1);
-  parentCats.splice(newIndex, 0, movedCat);
-
-  // update display_order
-  parentCats.forEach((c, i) => {
+function moveCategory(parent, index, dir) {
+  const newIndex = index + dir;
+  if (newIndex < 0 || newIndex >= parent.length) return;
+  const [moved] = parent.splice(index, 1);
+  parent.splice(newIndex, 0, moved);
+  // reassign display_order
+  parent.forEach((c, i) => {
     c.display_order = i + 1;
   });
+  emitChanges();
 }
 
-// If child changes its categories
-function onChildCategoriesUpdated(parentCat) {
+function onChildUpdated(parentCat) {
   return (updatedChildren) => {
     parentCat.children = updatedChildren;
-    emit("categoriesUpdated", categories.value);
+    emitChanges();
   };
-}
-
-async function saveCategories() {
-  try {
-    // If we only want to update categories (and ignore items), we can do:
-    await store.updateMenuData(props.slug, categories.value, []);
-    emit("categoriesUpdated", categories.value);
-    alert("Categories updated successfully!");
-  } catch (err) {
-    console.error("Failed to save categories:", err.message);
-  }
 }
 </script>
 

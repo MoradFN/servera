@@ -1,185 +1,180 @@
-<!-- frontend\src\components\restaurant\menu\ManageItems.vue -->
 <template>
   <div class="manage-items">
-    <h2>Manage Items</h2>
+    <h3>Manage Items</h3>
 
-    <!-- List existing items -->
-    <div v-for="(it, idx) in items" :key="it.id ?? it.name" class="item-row">
-      <div class="item-fields">
+    <div
+      v-for="(item, index) in items"
+      :key="item.id ?? 'new-' + index"
+      class="item-row"
+    >
+      <div>
         <input
-          v-model="it.name"
+          v-model="item.name"
           placeholder="Item Name"
-          @input="onInputChange"
+          @input="emitChanges"
         />
         <input
           type="number"
-          v-model.number="it.standard_price"
+          v-model.number="item.standard_price"
           placeholder="Standard Price"
-          @input="onInputChange"
+          @input="emitChanges"
         />
         <input
           type="number"
-          v-model.number="it.family_price"
+          v-model.number="item.family_price"
           placeholder="Family Price"
-          @input="onInputChange"
+          @input="emitChanges"
         />
         <input
           type="number"
-          v-model.number="it.display_order"
+          v-model.number="item.display_order"
           placeholder="Display Order"
-          @input="onInputChange"
+          @input="emitChanges"
         />
 
-        <!-- Category dropdown -->
-        <select v-model.number="it.category_id" @change="onInputChange">
-          <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+        <!-- Category dropdown: includes child categories, since we have allCategoriesFlat -->
+        <select v-model.number="item.category_id" @change="emitChanges">
+          <option v-for="cat in allCategories" :key="cat.id" :value="cat.id">
             {{ cat.name }}
           </option>
         </select>
-
-        <!-- Ingredients management -->
-        <div class="ingredients">
-          <h4>Ingredients</h4>
-          <div
-            v-for="(ing, iIndex) in it.ingredients"
-            :key="ing.id ?? ing.name"
-            class="ingredient-row"
-          >
-            <span>{{ ing.name }}</span>
-            <button @click="removeIngredient(it.ingredients, iIndex)">X</button>
-          </div>
-          <button @click="addIngredient(it)">Add Ingredient</button>
-        </div>
       </div>
 
+      <!-- Ingredients -->
+      <div class="ingredients">
+        <h4>Ingredients</h4>
+        <div
+          v-for="(ing, iIndex) in item.ingredients"
+          :key="ing.id ?? 'i' + iIndex"
+          class="ingredient-row"
+        >
+          <input
+            v-model="ing.name"
+            placeholder="Ingredient Name"
+            @input="emitChanges"
+          />
+          <button @click="removeIngredient(item.ingredients, iIndex)">X</button>
+        </div>
+        <button @click="addIngredient(item)">+ Add Ingredient</button>
+      </div>
+
+      <!-- Reorder / remove item -->
       <div class="item-buttons">
-        <button :disabled="idx === 0" @click="moveItem(items, idx, -1)">
-          ↑
-        </button>
+        <button :disabled="index === 0" @click="moveItem(index, -1)">↑</button>
         <button
-          :disabled="idx === items.length - 1"
-          @click="moveItem(items, idx, 1)"
+          :disabled="index === items.length - 1"
+          @click="moveItem(index, 1)"
         >
           ↓
         </button>
-        <button @click="removeItem(idx)">Remove</button>
+        <button @click="removeItem(index)">Remove</button>
       </div>
     </div>
 
     <button @click="addNewItem">Add New Item</button>
-    <button @click="saveItems">Save Items</button>
 
-    <!-- Debugging -->
-    <h3>Debugging</h3>
+    <h4>Debug Items</h4>
     <pre>{{ items }}</pre>
   </div>
 </template>
 
 <script setup>
 import { ref } from "vue";
-import { useRestaurantStore } from "@/stores/restaurantStore";
 
+// Props
 const props = defineProps({
   initialItems: { type: Array, required: true },
-  categories: { type: Array, required: true },
+  allCategories: { type: Array, required: true },
   slug: { type: String, required: true },
 });
+// Emit
+const emit = defineEmits(["itemsChanged"]);
 
-const emit = defineEmits(["itemsUpdated"]);
-
-const store = useRestaurantStore();
-
-// Local items array
+// We keep a local copy of items
 const items = ref([...props.initialItems]);
 
-function onInputChange() {
-  console.log("Item changed");
+function emitChanges() {
+  emit("itemsChanged", items.value);
 }
 
-// Add a brand new item
 function addNewItem() {
   items.value.push({
-    id: null, // indicates creation on server
-    category_id: props.categories[0]?.id || null,
+    id: null,
+    category_id: props.allCategories[0]?.id || null,
     name: "",
     standard_price: null,
     family_price: null,
     display_order: items.value.length + 1,
     ingredients: [],
   });
+  emitChanges();
 }
 
-// Remove an item from the list
 function removeItem(index) {
   items.value.splice(index, 1);
+  emitChanges();
 }
 
-// Reorder an item up/down
-function moveItem(array, index, direction) {
+function moveItem(index, direction) {
   const newIndex = index + direction;
-  if (newIndex < 0 || newIndex >= array.length) return;
-
-  const [movedItem] = array.splice(index, 1);
-  array.splice(newIndex, 0, movedItem);
+  if (newIndex < 0 || newIndex >= items.value.length) return;
+  const [moved] = items.value.splice(index, 1);
+  items.value.splice(newIndex, 0, moved);
 
   // update display_order
-  array.forEach((it, i) => {
+  items.value.forEach((it, i) => {
     it.display_order = i + 1;
   });
+  emitChanges();
 }
 
-// Ingredients
+// Add new ingredient
 function addIngredient(item) {
   item.ingredients.push({
-    id: null, // new ingredient
-    name: "New Ingredient",
+    id: null,
+    name: "",
   });
+  emitChanges();
 }
 
+// Remove an ingredient
 function removeIngredient(ingArray, iIndex) {
   ingArray.splice(iIndex, 1);
-}
-
-// Save items to server along with categories = []
-async function saveItems() {
-  try {
-    await store.updateMenuData(props.slug, [], items.value);
-    emit("itemsUpdated", items.value);
-    alert("Items saved successfully!");
-  } catch (err) {
-    console.error("Failed to save items:", err.message);
-  }
+  emitChanges();
 }
 </script>
 
 <style scoped>
 .manage-items {
-  margin-top: 1rem;
-  border: 1px solid #ccc;
+  border: 1px solid #ddd;
   padding: 1rem;
+  margin-top: 1rem;
 }
 .item-row {
-  border: 1px solid #ddd;
+  display: flex;
+  gap: 1rem;
+  border: 1px dashed #ccc;
   margin-bottom: 1rem;
   padding: 0.5rem;
-  display: flex;
-  justify-content: space-between;
 }
-.item-fields {
+.ingredients {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 .ingredient-row {
   display: flex;
-  align-items: center;
   gap: 0.5rem;
+  align-items: center;
 }
 .item-buttons {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  align-items: flex-start;
-  justify-content: center;
+}
+.item-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 </style>
