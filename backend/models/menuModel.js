@@ -15,7 +15,7 @@ export const findMenuCategoriesBySlug = async (slug) => {
 // Fetch items
 export const findMenuItemsBySlug = async (slug) => {
   const query = `
-      SELECT mi.id, mi.name, mi.standard_price, mi.family_price, mi.category_id
+      SELECT mi.id, mi.name, mi.display_order, mi.standard_price, mi.family_price, mi.category_id
       FROM menu_items mi
       JOIN restaurants r ON mi.restaurant_id = r.id
       WHERE r.slug = ? AND mi.is_active = TRUE
