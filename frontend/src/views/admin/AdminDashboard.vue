@@ -1,6 +1,6 @@
 <template>
   <div v-if="!loading">
-    <h1>Admin Dashboard</h1>
+    <h1 class="title">Admin Dashboard</h1>
 
     <!-- Check Ownership -->
     <div v-if="!isAuthenticated || !isOwner">
@@ -11,15 +11,23 @@
     </div>
 
     <div v-else>
-      <p>Pages status:</p>
-      <ul>
-        <li v-for="(status, page) in pageStatus" :key="page">
-          {{ page.toUpperCase() }} - {{ status }}
-          <button v-if="status === 'missing'" @click="createThatPage(page)">
-            Create {{ page }} page
-          </button>
-        </li>
-      </ul>
+      <!-- Pages Status Section -->
+      <div class="pages-status-container">
+        <h2>Pages Status</h2>
+        <div class="pages-status">
+          <span
+            v-for="(status, page) in pageStatus"
+            :key="page"
+            :class="{
+              found: status === 'found',
+              missing: status === 'missing',
+            }"
+            class="page-status"
+          >
+            {{ page.toUpperCase() }} - {{ status }}
+          </span>
+        </div>
+      </div>
 
       <!-- Page Creation Forms -->
       <div class="forms-container">
@@ -213,6 +221,54 @@ export default {
 </script>
 
 <style scoped>
+.title {
+  font-size: 2rem;
+  margin-bottom: 50px;
+  color: #333;
+}
+
+.title,
+h2 {
+  text-align: center;
+}
+
+.pages-status-container {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.pages-status-container h2 {
+  font-size: 1.8rem;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.pages-status {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.page-status {
+  font-size: 1rem;
+  font-weight: bold;
+  padding: 5px 15px;
+  border-radius: 4px;
+}
+
+.page-status.found {
+  background-color: #d4edda; /* Green for found */
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.page-status.missing {
+  background-color: #f8d7da; /* Red for missing */
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
 .forms-container {
   display: flex;
   gap: 20px;
