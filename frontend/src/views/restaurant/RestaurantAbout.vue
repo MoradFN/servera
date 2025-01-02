@@ -2,14 +2,11 @@
   <div class="about-page-container">
     <!-- If the about page is found, render the content -->
     <div v-if="pageIsFound">
-      <!-- Page Title -->
-      <!-- <h2 class="page-title">About Page</h2> -->
-
       <!-- Edit Mode Toggle -->
       <div v-if="isOwner" class="owner-controls">
         <button @click="toggleEditMode" class="edit-mode-button">
           <i class="pi pi-file-edit"></i>
-          <span>{{ editMode ? " Edit Mode" : "Preview" }}</span>
+          <span>{{ editMode ? " Close Edit" : "Edit page" }}</span>
         </button>
         <transition v-if="editMode" name="slide-fade">
           <!-- Save Changes Button only visible if changesMade -->
@@ -18,7 +15,12 @@
           </div>
         </transition>
       </div>
-
+      <div v-if="changesMade" class="preview-indicator-container">
+        <div v-if="!editMode" class="preview-indicator">
+          <h2>Preview</h2>
+        </div>
+        <button @click="refreshPage" class="reverse-button">Reverse</button>
+      </div>
       <!-- Editable Sections with Drag-and-Drop -->
       <draggable
         v-model="editableSections"
@@ -179,6 +181,10 @@ const saveSections = async () => {
   }
 };
 
+const refreshPage = () => {
+  window.location.reload();
+};
+
 // Determines the correct HTML tag for the section type
 const getSectionTag = (sectionType) => {
   switch (sectionType) {
@@ -195,7 +201,6 @@ const getSectionTag = (sectionType) => {
 </script>
 
 <style scoped>
-/* Edit Mode Button */
 .edit-mode-button {
   background-color: #007bff;
   color: white;
@@ -203,6 +208,60 @@ const getSectionTag = (sectionType) => {
   padding: 10px 20px;
   border-radius: 4px;
   cursor: pointer;
+}
+.preview-indicator-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 1000;
+}
+
+.preview-indicator {
+  background-color: #ffeb3b;
+  color: #333;
+  padding: 10px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.preview-indicator h2 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 0;
+}
+
+.reverse-button {
+  background-color: #f44336;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.5rem;
+  font-weight: bold;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.3s ease;
+}
+
+.reverse-button:hover {
+  background-color: #d32f2f;
+}
+
+/* Fade-in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Editable Sections */
@@ -265,6 +324,8 @@ const getSectionTag = (sectionType) => {
 .save-changes-bar {
   position: sticky;
   top: -50px;
+  margin-top: 30px;
+  border-radius: 7px;
   background-color: #007bff;
   color: white;
   text-align: center;
