@@ -1,6 +1,6 @@
 <template>
   <div class="subscription-form">
-    <h2 class="form-title">Subscribe</h2>
+    <h2 class="form-title">Prenumerera</h2>
 
     <!-- Displayar innloggad restaurang data från eget api. -->
     <div v-if="restaurantData" class="restaurant-info">
@@ -8,7 +8,11 @@
         <strong>{{ restaurantData.name || "Name unavailable" }}</strong>
       </p>
       <p>{{ restaurantData.email || "Email unavailable" }}</p>
-      <p>Restaurant Slug: {{ restaurantData.slug || "Slug unavailable" }}</p>
+      <p>
+        Få åtkomst till: www.servera.se/{{
+          restaurantData.slug || "Slug unavailable"
+        }}
+      </p>
     </div>
 
     <form @submit.prevent="createSubscription" class="form-container">
