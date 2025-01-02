@@ -1,9 +1,10 @@
 <template>
   <div class="manage-categories">
     <h3>Manage Categories</h3>
+
     <div
-      v-for="(cat, index) in categories"
-      :key="cat.id ?? cat.name"
+      v-for="(cat, idx) in categories"
+      :key="cat.id ?? 'cat-' + idx"
       class="category-item"
     >
       <input
@@ -19,21 +20,21 @@
       />
       <div class="buttons">
         <button
-          :disabled="index === 0"
-          @click="moveCategory(categories, index, -1)"
+          :disabled="idx === 0"
+          @click="moveCategory(categories, idx, -1)"
         >
           ↑
         </button>
         <button
-          :disabled="index === categories.length - 1"
-          @click="moveCategory(categories, index, 1)"
+          :disabled="idx === categories.length - 1"
+          @click="moveCategory(categories, idx, 1)"
         >
           ↓
         </button>
         <button @click="removeCategory(categories, cat)">Remove</button>
       </div>
 
-      <!-- Recurse for child categories -->
+      <!-- Recurse for children -->
       <div v-if="cat.children?.length" class="child-categories">
         <ManageCategories
           :initialCategories="cat.children"
@@ -75,21 +76,21 @@ function addCategory() {
   emitChanges();
 }
 
-function removeCategory(parent, cat) {
-  const idx = parent.indexOf(cat);
+function removeCategory(parentCats, cat) {
+  const idx = parentCats.indexOf(cat);
   if (idx !== -1) {
-    parent.splice(idx, 1);
+    parentCats.splice(idx, 1);
   }
   emitChanges();
 }
 
-function moveCategory(parent, index, dir) {
+function moveCategory(parentCats, index, dir) {
   const newIndex = index + dir;
-  if (newIndex < 0 || newIndex >= parent.length) return;
-  const [moved] = parent.splice(index, 1);
-  parent.splice(newIndex, 0, moved);
-  // reassign display_order
-  parent.forEach((c, i) => {
+  if (newIndex < 0 || newIndex >= parentCats.length) return;
+  const [moved] = parentCats.splice(index, 1);
+  parentCats.splice(newIndex, 0, moved);
+  // update display_order
+  parentCats.forEach((c, i) => {
     c.display_order = i + 1;
   });
   emitChanges();
@@ -113,11 +114,13 @@ function onChildUpdated(parentCat) {
   align-items: center;
   gap: 1rem;
   margin-bottom: 0.5rem;
+  padding: 0.5rem;
 }
 
 .child-categories {
   margin-left: 2rem;
   border-left: 2px solid #ccc;
+  margin-left: 1rem;
   padding-left: 1rem;
 }
 

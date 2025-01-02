@@ -21,9 +21,9 @@
       :editMode="editMode"
       @change="onInputChange"
     />
-
+    <!-- <MenuSections v-if="!editMode" :sections="menuSections" /> -->
     <!-- Read-only sections otherwise -->
-    <MenuSections v-if="!editMode" :sections="menuSections" />
+    <MenuSections v-else :sections="menuSections" />
   </div>
 
   <!-- Middle: Manage categories & items if editMode -->
@@ -52,8 +52,9 @@
 </template>
 
 <script>
-import { computed, ref, watchEffect } from "vue";
+import { computed, ref, onMounted } from "vue";
 import { useRestaurantStore } from "@/stores/restaurantStore";
+
 import EditableSections from "@/components/restaurant/menu/EditableSections.vue";
 import MenuSections from "@/components/restaurant/menu/MenuSections.vue";
 import MenuCategories from "@/components/restaurant/menu/MenuCategories.vue";
@@ -77,45 +78,45 @@ export default {
   setup(props) {
     const store = useRestaurantStore();
 
+    // Edit mode flags
     const editMode = ref(false);
     const changesMade = ref(false);
 
     // For sections editing
     const editableSections = ref([]);
 
+    // Slug from the store
     const slug = computed(() => store.currentSlug);
-    // "menu" from store
+
+    // Menu data from the store
     const menuData = computed(() => store.restaurantData?.menu || {});
     const menuSections = computed(() => menuData.value.sections || []);
-    // Vi håller egen  copy av "localCategories" och "localItems" skcika i samma för att undvika omit.
-    // in a single call to updateMenuData.
+
+    // Local copies for categories & items
     const localCategories = ref([]);
     const localItems = ref([]);
 
-    // Initialize local copies
-    watchEffect(() => {
-      // For sections
+    // Initialize local arrays ONCE in onMounted (or whenever the slug changes)
+    onMounted(() => {
+      // Clone store sections
       editableSections.value = JSON.parse(JSON.stringify(menuSections.value));
 
-      // For categories
+      // Clone categories
       localCategories.value = JSON.parse(
         JSON.stringify(menuData.value.categories || [])
       );
 
-      // For items
+      // Clone items
       localItems.value = JSON.parse(JSON.stringify(menuData.value.items || []));
     });
 
-    // Whenever we do "flatten categories" for the dropdown in ManageItems
-    // we can build a computed that returns all categories + children in one array
+    // Flatten categories for the item dropdown
     const allCategoriesFlat = computed(() => {
       const result = [];
-      function traverse(catArr) {
-        catArr.forEach((cat) => {
+      function traverse(cats) {
+        cats.forEach((cat) => {
           result.push(cat);
-          if (cat.children?.length) {
-            traverse(cat.children);
-          }
+          if (cat.children?.length) traverse(cat.children);
         });
       }
       traverse(localCategories.value);
@@ -129,27 +130,29 @@ export default {
         mapping[cat.id] = localItems.value.filter(
           (item) => item.category_id === cat.id
         );
-        (cat.children || []).forEach(mapCat);
+        if (cat.children) cat.children.forEach(mapCat);
       }
       localCategories.value.forEach(mapCat);
       return mapping;
     });
 
+    // Toggles edit mode
     function toggleEditMode() {
       editMode.value = !editMode.value;
     }
 
+    // Mark changes
     function onInputChange() {
       changesMade.value = true;
     }
 
-    // "Save All" merges sections + categories + items
+    // Save both sections + categories + items in one go
     async function saveAllChanges() {
       try {
-        // 1) Save sections
+        // 1) update sections
         await store.updateSections(slug.value, "menu", editableSections.value);
 
-        // 2) Then update categories+items in one call
+        // 2) update categories + items
         await store.updateMenuData(
           slug.value,
           localCategories.value,
@@ -164,13 +167,13 @@ export default {
       }
     }
 
-    // Child "ManageCategories" emits new categories
-    function onCategoriesChanged(updatedCats) {
-      localCategories.value = updatedCats;
+    // Called when ManageCategories emits categoriesChanged
+    function onCategoriesChanged(updatedCategories) {
+      localCategories.value = updatedCategories;
       changesMade.value = true;
     }
 
-    // Child "ManageItems" emits new items
+    // Called when ManageItems emits itemsChanged
     function onItemsChanged(updatedItems) {
       localItems.value = updatedItems;
       changesMade.value = true;
