@@ -12,7 +12,7 @@
         </button>
       </p>
     </div>
-
+    <!-- styla -->
     <RestaurantNavBar
       :restaurantData="restaurantData"
       :isAuthenticated="isAuthenticated"
