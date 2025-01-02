@@ -141,6 +141,31 @@ export const useRestaurantStore = defineStore("restaurant", {
       }
     },
 
+    async updateMenuData(slug, categories, items) {
+      console.log("updateMenuData:", { slug, categories, items });
+      try {
+        const response = await axios.put(`/pages/${slug}/menu`, {
+          categories,
+          items,
+        });
+
+        if (response.data.success) {
+          // Update local store with new categories and items
+          this.restaurantData.menu.categories = [...categories];
+          this.restaurantData.menu.items = [...items];
+          console.log("✅ Menu data updated successfully.");
+          return response.data;
+        } else {
+          throw new Error(
+            response.data.message || "Failed to update menu data."
+          );
+        }
+      } catch (error) {
+        console.error("Error updating menu data:", error.message);
+        throw error;
+      }
+    },
+
     // async updateMenuData(slug, categories, items) {
     //   try {
     //     // Make the PUT request to your new endpoint
@@ -166,6 +191,28 @@ export const useRestaurantStore = defineStore("restaurant", {
     //     throw error;
     //   }
     // },
+
+    async updateMenuCategories(slug, categories) {
+      try {
+        const response = await axios.put(`/pages/${slug}/menu`, {
+          categories,
+          items: [], // Send empty items array if only categories are updated
+        });
+        if (response.data.success) {
+          // Update local store with new categories
+          this.restaurantData.menu.categories = [...categories];
+          console.log("✅ Categories updated successfully.");
+          return response.data;
+        } else {
+          throw new Error(
+            response.data.message || "Failed to update categories."
+          );
+        }
+      } catch (error) {
+        console.error("Error updating categories:", error.message);
+        throw error;
+      }
+    },
 
     resetStore() {
       this.restaurantData = {};
