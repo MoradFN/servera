@@ -30,7 +30,7 @@
   <div v-if="isOwner && editMode">
     <!-- ManageCategories modifies localCategories -->
     <ManageCategories
-      :initialCategories="localCategories"
+      :categories="localCategories"
       :allCategoriesFlat="allCategoriesFlat"
       :slug="slug"
       @categoriesChanged="onCategoriesChanged"
@@ -53,8 +53,9 @@
 </template>
 
 <script>
-import { computed, ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRestaurantStore } from "@/stores/restaurantStore";
+
 import EditableSections from "@/components/restaurant/menu/EditableSections.vue";
 import MenuSections from "@/components/restaurant/menu/MenuSections.vue";
 import MenuCategories from "@/components/restaurant/menu/MenuCategories.vue";
@@ -78,68 +79,67 @@ export default {
   setup(props) {
     const store = useRestaurantStore();
 
-    // Edit mode flags
+    // Edit/changes flags
     const editMode = ref(false);
     const changesMade = ref(false);
 
-    // For sections editing
+    // For sections
     const editableSections = ref([]);
 
-    // Slug from the store
+    // Slug from store
     const slug = computed(() => store.currentSlug);
-
-    // Menu data from the store
-    const menuData = computed(() => store.restaurantData?.menu || {});
+    const menuData = computed(() => store.restaurantData.menu || {});
     const menuSections = computed(() => menuData.value.sections || []);
 
-    // Local copies for categories & items
+    // localCategories & localItems arrays
     const localCategories = ref([]);
     const localItems = ref([]);
 
-    // Initialize local arrays ONCE in onMounted
     onMounted(() => {
-      // Clone store sections
+      // Clone sections
       editableSections.value = JSON.parse(JSON.stringify(menuSections.value));
-
       // Clone categories
       localCategories.value = JSON.parse(
         JSON.stringify(menuData.value.categories || [])
       );
-
       // Clone items
       localItems.value = JSON.parse(JSON.stringify(menuData.value.items || []));
     });
 
-    // Flatten categories for both ManageCategories (parent dropdown) and ManageItems
+    // Flatten categories so new categories appear immediately
     const allCategoriesFlat = computed(() => {
       const result = [];
-      function traverse(cats) {
-        cats.forEach((cat) => {
+      function traverse(catArr) {
+        catArr.forEach((cat) => {
           result.push(cat);
-          if (cat.children?.length) traverse(cat.children);
+          if (cat.children?.length) {
+            traverse(cat.children);
+          }
         });
       }
       traverse(localCategories.value);
       return result;
     });
 
-    // Build categoryId -> array of items map for read-only display
+    // Build categoryId->items map for read-only display
     const categorizedItems = computed(() => {
       const mapping = {};
-      function mapCat(cat) {
+      function walk(cat) {
         mapping[cat.id] = localItems.value.filter(
           (item) => item.category_id === cat.id
         );
-        if (cat.children) cat.children.forEach(mapCat);
+        (cat.children || []).forEach(walk);
       }
-      localCategories.value.forEach(mapCat);
+      localCategories.value.forEach(walk);
       return mapping;
     });
 
+    // Toggles edit mode
     function toggleEditMode() {
       editMode.value = !editMode.value;
     }
 
+    // Called when editing sections
     function onInputChange() {
       changesMade.value = true;
     }
@@ -147,10 +147,10 @@ export default {
     // Save both sections + categories + items
     async function saveAllChanges() {
       try {
-        // 1) update sections
+        // 1) Save sections
         await store.updateSections(slug.value, "menu", editableSections.value);
 
-        // 2) update categories + items in one call
+        // 2) Save categories/items
         await store.updateMenuData(
           slug.value,
           localCategories.value,
@@ -160,18 +160,17 @@ export default {
         changesMade.value = false;
         editMode.value = false;
         alert("All changes saved successfully!");
-      } catch (err) {
-        console.error("Failed to save all changes:", err.message);
+      } catch (error) {
+        console.error("Failed to save all changes:", error.message);
       }
     }
 
-    // Called when ManageCategories emits categoriesChanged
-    function onCategoriesChanged(updatedCategories) {
-      localCategories.value = updatedCategories;
+    // If child categories changed => changesMade = true
+    function onCategoriesChanged() {
       changesMade.value = true;
     }
 
-    // Called when ManageItems emits itemsChanged
+    // If child items changed => update localItems => changesMade = true
     function onItemsChanged(updatedItems) {
       localItems.value = updatedItems;
       changesMade.value = true;

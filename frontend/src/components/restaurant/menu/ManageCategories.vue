@@ -7,30 +7,29 @@
       :key="cat.id ?? 'cat-' + idx"
       class="category-item"
     >
-      <!-- Category Name & display_order -->
+      <!-- Category name & display_order -->
       <div>
         <input
           v-model="cat.name"
           placeholder="Category Name"
-          @input="emitChanges"
+          @input="emitCategoriesChanged"
         />
         <input
           type="number"
           v-model.number="cat.display_order"
           placeholder="Display Order"
-          @input="emitChanges"
+          @input="emitCategoriesChanged"
         />
       </div>
 
-      <!-- Optional Parent Category Dropdown -->
-      <div class="parent-category-dropdown">
+      <!-- Parent dropdown -->
+      <div class="parent-dropdown">
         <label>Parent:</label>
         <select
           :value="cat.parent_id ?? ''"
-          @change="onChangeParent($event, cat)"
+          @change="onChangeParent($event, cat, parentRef)"
         >
-          <!-- Option for "None" -->
-          <option :value="''">None (Top-Level)</option>
+          <option value="">None (Top-Level)</option>
           <option
             v-for="pCat in validParentsFor(cat)"
             :key="pCat.id"
@@ -41,7 +40,7 @@
         </select>
       </div>
 
-      <!-- Reorder/Remove -->
+      <!-- Reorder / remove -->
       <div class="buttons">
         <button
           :disabled="idx === 0"
@@ -58,12 +57,13 @@
         <button @click="removeCategory(categories, cat)">Remove</button>
       </div>
 
-      <!-- Children -->
+      <!-- If it has children, recurse with the same 'categories' reference -->
       <div v-if="cat.children?.length" class="child-categories">
         <ManageCategories
-          :initialCategories="cat.children"
+          :categories="cat.children"
           :allCategoriesFlat="allCategoriesFlat"
-          @categoriesChanged="onChildUpdated(cat)"
+          :slug="slug"
+          @categoriesChanged="emitCategoriesChanged"
         />
       </div>
     </div>
@@ -76,107 +76,135 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { toRefs } from "vue";
 import ManageCategories from "./ManageCategories.vue";
 
 const props = defineProps({
-  initialCategories: { type: Array, required: true },
+  categories: { type: Array, required: true },
   allCategoriesFlat: { type: Array, required: true },
+  slug: { type: String, required: true }, // If needed for any reason
 });
+
 const emit = defineEmits(["categoriesChanged"]);
 
-// local categories
-const categories = ref([...props.initialCategories]);
+/**
+ * We do not create a local copy of props.categories,
+ * we directly manipulate the parent's array reference.
+ * This ensures parent sees changes immediately.
+ */
 
-// "emitChanges" triggers an event so the parent can unify changes
-function emitChanges() {
-  emit("categoriesChanged", categories.value);
+/**
+ * Emit that categories changed => triggers parent's onCategoriesChanged => changesMade=true
+ */
+function emitCategoriesChanged() {
+  emit("categoriesChanged");
 }
 
-// Add new top-level category
+/**
+ * Add a new top-level category
+ */
 function addCategory() {
-  categories.value.push({
+  props.categories.push({
     id: null,
     parent_id: null,
     name: "",
-    display_order: categories.value.length + 1,
+    display_order: props.categories.length + 1,
     children: [],
   });
-  emitChanges();
+  emitCategoriesChanged();
 }
 
-// Remove a category from an array
+/**
+ * Remove category from 'parentCats'
+ */
 function removeCategory(parentCats, cat) {
   const idx = parentCats.indexOf(cat);
   if (idx !== -1) {
     parentCats.splice(idx, 1);
   }
-  emitChanges();
+  emitCategoriesChanged();
 }
 
-// Reorder a category up/down
-function moveCategory(parentCats, index, dir) {
-  const newIndex = index + dir;
+/**
+ * Move category up/down
+ */
+function moveCategory(parentCats, index, direction) {
+  const newIndex = index + direction;
   if (newIndex < 0 || newIndex >= parentCats.length) return;
-  const [moved] = parentCats.splice(index, 1);
-  parentCats.splice(newIndex, 0, moved);
-
-  // Reassign display_order
+  const [movedCat] = parentCats.splice(index, 1);
+  parentCats.splice(newIndex, 0, movedCat);
+  // reassign display_order
   parentCats.forEach((c, i) => {
     c.display_order = i + 1;
   });
-  emitChanges();
-}
-
-// If a child ManageCategories updates categories
-function onChildUpdated(parentCat) {
-  return (updatedChildren) => {
-    parentCat.children = updatedChildren;
-    emitChanges();
-  };
+  emitCategoriesChanged();
 }
 
 /**
- * Provide a list of valid parent categories for "cat"
- * We'll exclude "cat" itself and its descendants to avoid cycles
- * Also exclude any child categories to prevent loops
+ * Valid parents are all categories minus 'cat' itself + its descendants
  */
 function validParentsFor(cat) {
-  // 1) gather cat + its descendants
   const invalidIds = new Set();
-  function gatherIds(c) {
-    invalidIds.add(c.id);
-    if (c.children) {
-      c.children.forEach(gatherIds);
-    }
-  }
-  gatherIds(cat);
+  gatherIds(cat, invalidIds);
+  return props.allCategoriesFlat.filter((c) => !invalidIds.has(c.id));
+}
 
-  // 2) Filter out cat + descendants from "allCategoriesFlat"
-  return props.allCategoriesFlat.filter((pCat) => !invalidIds.has(pCat.id));
+function gatherIds(cat, set) {
+  if (cat.id != null) set.add(cat.id);
+  if (cat.children) {
+    cat.children.forEach((child) => gatherIds(child, set));
+  }
 }
 
 /**
- * On changing parent from dropdown
- * If value = '', set parent_id = null => top-level
- * Otherwise, set parent_id to selected category
+ * onChangeParent => if value='', cat.parent_id=null => we forcibly re-tree so cat is top-level
+ * otherwise parse the new parentId => re-tree cat under that parent's children
  */
-function onChangeParent(evt, cat) {
-  const newVal = evt.target.value;
+function onChangeParent(e, cat, parentRef) {
+  const newVal = e.target.value;
   if (!newVal) {
+    // None => set cat.parent_id=null => move cat to top-level
+    detachFromCurrentParent(cat);
     cat.parent_id = null;
+    props.categories.push(cat); // top-level
   } else {
-    const parentId = parseInt(newVal);
-    cat.parent_id = parentId;
+    const newParentId = parseInt(newVal);
+    detachFromCurrentParent(cat);
+    cat.parent_id = newParentId;
+    // find the new parent in props.allCategoriesFlat
+    const newParent = props.allCategoriesFlat.find((c) => c.id === newParentId);
+    if (newParent) {
+      if (!newParent.children) newParent.children = [];
+      newParent.children.push(cat);
+    }
   }
-  emitChanges();
+  emitCategoriesChanged();
+}
+
+/**
+ * Detach cat from whichever parent's children array it currently resides in,
+ * so it can become top-level or move to another parent's children.
+ */
+function detachFromCurrentParent(cat) {
+  // 1) find cat in the entire tree
+  function removeCatFromChildren(parentCats) {
+    for (let i = 0; i < parentCats.length; i++) {
+      if (parentCats[i] === cat) {
+        parentCats.splice(i, 1);
+        return true;
+      }
+      if (parentCats[i].children?.length) {
+        const found = removeCatFromChildren(parentCats[i].children);
+        if (found) return true;
+      }
+    }
+    return false;
+  }
+  removeCatFromChildren(props.categories);
 }
 </script>
 
 <style scoped>
-.manage-categories {
-  margin-top: 1rem;
-}
 .category-item {
   border: 1px solid #aaa;
   margin-bottom: 0.5rem;
@@ -186,16 +214,16 @@ function onChangeParent(evt, cat) {
   gap: 0.5rem;
   align-items: center;
 }
-.parent-category-dropdown {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
 .child-categories {
   border-left: 2px dashed #ccc;
   margin-left: 1rem;
   padding-left: 1rem;
   width: 100%;
+}
+.parent-dropdown {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 .buttons {
   display: flex;
