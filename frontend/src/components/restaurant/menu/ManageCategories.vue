@@ -1,12 +1,15 @@
 <template>
   <div class="manage-categories">
-    <h2 class="section-title">Manage Categories</h2>
-    <!-- Loop over categories -->
+    <!-- Instead of a single static heading,
+         each category now has its own "Manage {{ cat.name }}" heading -->
     <div
       v-for="(cat, idx) in categories"
       :key="cat.id ?? 'cat-' + idx"
-      class="category-item"
+      class="category-block"
     >
+      <!-- Heading for this category -->
+      <h2 class="section-title">Manage {{ cat.name || "New Category" }}</h2>
+
       <!-- Category fields row -->
       <div class="category-fields">
         <!-- Name and Display Order -->
@@ -116,7 +119,6 @@ const emit = defineEmits(["categoriesChanged"]);
 /**
  * We do not create a local copy of props.categories,
  * we directly manipulate the parent's array reference.
- * This ensures the parent sees changes immediately.
  */
 
 function emitCategoriesChanged() {
@@ -158,8 +160,7 @@ function moveCategory(parentCats, index, direction) {
 }
 
 /**
- * Exclude 'cat' and its descendants from the valid parents,
- * to avoid cyclical references.
+ * Exclude 'cat' and its descendants from valid parents, to avoid cycles.
  */
 function validParentsFor(cat) {
   const invalidIds = new Set();
@@ -174,13 +175,12 @@ function gatherIds(cat, set) {
 }
 
 /**
- * onChangeParent => if value='', cat.parent_id=null => forcibly re-tree so cat is top-level
- * otherwise parse the new parentId => re-tree cat under that parent's children
+ * If newVal='', cat.parent_id=null => forcibly re-tree top-level
+ * Else parse the parent's ID => re-tree cat under that parent's children
  */
 function onChangeParent(e, cat) {
   const newVal = e.target.value;
   if (!newVal) {
-    // None => set cat.parent_id=null => move cat to top-level
     detachFromCurrentParent(cat);
     cat.parent_id = null;
     props.categories.push(cat);
@@ -188,7 +188,6 @@ function onChangeParent(e, cat) {
     const newParentId = parseInt(newVal);
     detachFromCurrentParent(cat);
     cat.parent_id = newParentId;
-    // find the new parent in allCategoriesFlat
     const newParent = props.allCategoriesFlat.find((c) => c.id === newParentId);
     if (newParent) {
       if (!newParent.children) newParent.children = [];
@@ -199,8 +198,8 @@ function onChangeParent(e, cat) {
 }
 
 /**
- * Remove cat from whichever parent's children array it currently resides in,
- * so it can become top-level or move to another parent's children.
+ * Remove cat from whichever parent's children array it's in,
+ * so it can become top-level or child of another parent.
  */
 function detachFromCurrentParent(cat) {
   function removeCatFromChildren(parentCats) {
@@ -221,73 +220,60 @@ function detachFromCurrentParent(cat) {
 </script>
 
 <style scoped>
+/* Container for the entire manage categories UI */
 .manage-categories {
   background-color: #fefefe;
   border: 1px solid #ccc;
-  padding: 1.5rem;
-  border-radius: 6px;
-  max-width: 700px;
+  padding: 2rem;
+  border-radius: 8px;
+  max-width: 900px; /* Wider container for more "air" */
   margin: 2rem auto;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.12);
 }
 
+/* Each category block */
+.category-block {
+  border: 1px solid #aaa;
+  background-color: #fafafa;
+  border-radius: 6px;
+  margin-bottom: 2rem;
+  padding: 1rem 1.5rem;
+}
+
+/* Heading with "Manage {{ cat.name }}" */
 .section-title {
   margin-top: 0;
   margin-bottom: 1rem;
   color: #333;
-  font-size: 1.4rem;
+  font-size: 1.3rem;
+  font-weight: 600;
 }
 
-/* Each category row */
-.category-item {
-  border: 1px solid #aaa;
-  background-color: #fafafa;
-  border-radius: 4px;
-  margin-bottom: 1rem;
-  padding: 1rem;
-}
-
-/* 
-  The row of fields (name, display order, parent dropdown) 
-  We'll space them horizontally 
-*/
+/* The row of fields (name, display order, parent dropdown) */
 .category-fields {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 0.5rem;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .input-group {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  min-width: 140px;
+  gap: 0.3rem;
+  min-width: 150px;
 }
 
-/* 
-  The action buttons for reordering, removing 
-*/
-.category-actions,
-.buttons {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
+label {
+  font-size: 0.9rem;
+  color: #555;
 }
 
-/* The top-level .child-categories are indented with dashed border */
-.child-categories {
-  border-left: 2px dashed #ccc;
-  margin-left: 1rem;
-  padding-left: 1rem;
-  margin-top: 1rem;
-}
-
-/* The input & select styling */
+/* Input styling */
 .text-input,
 .number-input,
 .select-input {
-  padding: 0.4rem;
+  padding: 0.5rem;
   font-size: 0.9rem;
   border: 1px solid #ccc;
   border-radius: 4px;
@@ -296,14 +282,31 @@ function detachFromCurrentParent(cat) {
 /* 
   The reorder / remove buttons 
 */
+.category-actions,
+.buttons {
+  display: flex;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+/* The top-level .child-categories are indented with dashed border */
+.child-categories {
+  border-left: 2px dashed #ccc;
+  margin-left: 1rem;
+  padding-left: 1.5rem;
+  margin-top: 1rem;
+}
+
+/* Reusable button styling */
 .action-btn {
   background-color: #007bff;
   border: none;
   color: white;
   font-size: 0.9rem;
-  padding: 0.35rem 0.5rem;
+  padding: 0.4rem 0.8rem;
   border-radius: 4px;
   cursor: pointer;
+  line-height: 1;
 }
 
 .action-btn:disabled {
@@ -325,36 +328,42 @@ function detachFromCurrentParent(cat) {
 
 /* Add category button */
 .add-btn {
-  margin-top: 1rem;
+  display: inline-block;
+  margin-top: 1.5rem;
   background-color: #28a745;
   color: #fff;
   border: none;
-  font-size: 0.9rem;
-  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  padding: 0.5rem 1.5rem;
   border-radius: 4px;
   cursor: pointer;
+  transition: background-color 0.2s ease;
 }
+
 .add-btn:hover {
   background-color: #218838;
 }
 
 /* Debug area styling */
 .debug-section {
-  margin-top: 1rem;
+  margin-top: 2rem;
   background-color: #f9f9f9;
   border: 1px dashed #ccc;
   padding: 1rem;
-  border-radius: 4px;
+  border-radius: 6px;
 }
 .debug-section h4 {
   margin-top: 0;
+  font-size: 1rem;
 }
 .debug-section pre {
-  max-height: 200px;
+  max-height: 220px;
   overflow-y: auto;
   background-color: #fff;
   border: 1px solid #ddd;
-  padding: 0.5rem;
+  padding: 0.75rem;
   border-radius: 4px;
+  font-size: 0.85rem;
+  line-height: 1.2;
 }
 </style>
