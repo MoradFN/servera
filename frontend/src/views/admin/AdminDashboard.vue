@@ -9,6 +9,7 @@
       </p>
       <p v-else>You are not authorized to manage this restaurant.</p>
     </div>
+
     <div v-else>
       <p>Pages status:</p>
       <ul>
@@ -19,101 +20,104 @@
           </button>
         </li>
       </ul>
-      <!-- Page Creation Form -->
-      <form @submit.prevent="submitPage" class="create-page-form">
-        <label for="pageName">Page Name:</label>
-        <select id="pageName" v-model="pageName" required>
-          <option value="" disabled>Select a page</option>
-          <option value="home">Home</option>
-          <option value="about">About</option>
-          <option value="menu">Menu</option>
-        </select>
 
-        <label for="sections">Sections:</label>
-        <div v-for="(section, index) in sections" :key="index" class="section">
-          <select v-model="section.section_type">
-            <option value="title">Title</option>
-            <option value="text">Text</option>
-          </select>
-          <input
-            v-model="section.content"
-            placeholder="Enter section content"
-            required
-          />
-          <input
-            v-model.number="section.section_order"
-            type="number"
-            min="1"
-            placeholder="Order"
-            required
-          />
-          <button type="button" @click="removeSection(index)">
-            Remove Section
+      <!-- Page Creation Forms -->
+      <div v-for="page in pages" :key="page.name" class="page-form-container">
+        <h2>Create {{ page.label }} Page</h2>
+        <form @submit.prevent="submitPage(page.name)" class="create-page-form">
+          <label for="sections">Sections:</label>
+          <div
+            v-for="(section, index) in sections[page.name]"
+            :key="index"
+            class="section"
+          >
+            <select v-model="section.section_type" required>
+              <option value="title">Title</option>
+              <option value="text">Text</option>
+            </select>
+            <input
+              v-model="section.content"
+              placeholder="Enter section content"
+              required
+            />
+            <input
+              v-model.number="section.section_order"
+              type="number"
+              min="1"
+              placeholder="Order"
+              required
+            />
+            <button type="button" @click="removeSection(page.name, index)">
+              Remove Section
+            </button>
+          </div>
+          <button type="button" @click="addSection(page.name)">
+            Add Section
           </button>
-        </div>
-        <button type="button" @click="addSection">Add Section</button>
-        <button type="submit">Create Page</button>
-      </form>
-
-      <!-- Feedback Message -->
-      <p v-if="message" :class="{ success: isSuccess, error: !isSuccess }">
-        {{ message }}
-      </p>
+          <button type="submit">Create {{ page.label }} Page</button>
+        </form>
+        <p
+          v-if="page.message"
+          :class="{ success: page.isSuccess, error: !page.isSuccess }"
+        >
+          {{ page.message }}
+        </p>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
+import { ref, computed, onMounted } from "vue";
 import { useAuthStore } from "@/stores/authStore";
 import { useRestaurantStore } from "@/stores/restaurantStore";
-import { computed, ref, onMounted } from "vue";
 
 export default {
   setup() {
     const authStore = useAuthStore();
     const restaurantStore = useRestaurantStore();
 
-    // Reactive States
-    const pageName = ref("");
-    const sections = ref([
-      { section_type: "title", content: "", section_order: 1 },
+    // Page configurations for Home, About, and Menu
+    const pages = ref([
+      { name: "home", label: "Home", message: "", isSuccess: false },
+      { name: "about", label: "About", message: "", isSuccess: false },
+      { name: "menu", label: "Menu", message: "", isSuccess: false },
     ]);
-    const message = ref("");
-    const isSuccess = ref(false);
-    const loading = ref(true);
 
-    // Computed Properties
+    // Sections for each page
+    const sections = ref({
+      home: [{ section_type: "title", content: "", section_order: 1 }],
+      about: [{ section_type: "title", content: "", section_order: 1 }],
+      menu: [{ section_type: "title", content: "", section_order: 1 }],
+    });
+
+    const loading = ref(true);
     const isAuthenticated = computed(() => authStore.isAuthenticated);
     const isOwner = computed(() => authStore.isOwner);
     const pageStatus = computed(() => restaurantStore.pageStatus);
 
-    // Add a new section
-    const addSection = () => {
-      sections.value.push({
+    // Add a new section to the specified page
+    const addSection = (page) => {
+      sections.value[page].push({
         section_type: "text",
         content: "",
-        section_order: sections.value.length + 1,
+        section_order: sections.value[page].length + 1,
       });
     };
 
-    // Remove a section
-    const removeSection = (index) => {
-      sections.value.splice(index, 1);
+    // Remove a section from the specified page
+    const removeSection = (page, index) => {
+      sections.value[page].splice(index, 1);
     };
 
-    // Submit a new page
-    const submitPage = async () => {
-      try {
-        if (!pageName.value) {
-          message.value = "Please select a page name.";
-          isSuccess.value = false;
-          return;
-        }
+    // Submit a page
+    const submitPage = async (pageName) => {
+      const pageConfig = pages.value.find((page) => page.name === pageName);
 
+      try {
         const pageData = {
-          name: pageName.value,
-          sections: sections.value.map((section, index) => ({
-            page_name: pageName.value,
+          name: pageName,
+          sections: sections.value[pageName].map((section, index) => ({
             section_type: section.section_type,
             content: section.content,
             section_order: index + 1,
@@ -124,22 +128,22 @@ export default {
           authStore.user.slug,
           pageData
         );
-        isSuccess.value = response.success;
-        message.value = response.message;
+
+        pageConfig.isSuccess = response.success;
+        pageConfig.message = response.message;
 
         if (response.success) {
-          pageName.value = "";
-          sections.value = [
+          sections.value[pageName] = [
             { section_type: "title", content: "", section_order: 1 },
           ];
         }
       } catch (error) {
-        isSuccess.value = false;
-        message.value = error.message;
+        pageConfig.isSuccess = false;
+        pageConfig.message = error.message;
       }
     };
 
-    // Fetch Auth Status and Ownership on Mount
+    // Fetch authentication and ownership status on mount
     onMounted(async () => {
       try {
         await authStore.fetchAuthStatus();
@@ -154,16 +158,14 @@ export default {
     });
 
     return {
-      pageName,
+      pages,
       sections,
       addSection,
       removeSection,
       submitPage,
-      message,
-      isSuccess,
-      pageStatus,
       isAuthenticated,
       isOwner,
+      pageStatus,
       loading,
     };
   },
@@ -171,67 +173,57 @@ export default {
 </script>
 
 <style scoped>
+.page-form-container {
+  margin-bottom: 30px;
+}
+
 .create-page-form {
-  background-color: rgb(187, 180, 180);
-  margin-bottom: 20px;
-  padding: 10px;
-  border-radius: 4px;
+  background-color: #f9f9f9;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-top: 10px;
 }
 
 .create-page-form label {
   display: block;
-  margin-bottom: 5px;
+  margin-bottom: 10px;
   font-weight: bold;
-  color: #333;
 }
 
 .create-page-form input,
 .create-page-form select {
-  width: calc(100% - 12px);
+  width: 100%;
   margin-bottom: 10px;
-  padding: 5px;
+  padding: 10px;
   border: 1px solid #ccc;
   border-radius: 4px;
-  background-color: #f9f9f9;
-  color: #333;
-}
-
-.create-page-form input:focus,
-.create-page-form select:focus {
-  outline: none;
-  border-color: #007bff;
 }
 
 .create-page-form button {
-  background-color: #007bff;
-  color: white;
   padding: 10px 20px;
+  color: white;
+  background-color: #007bff;
   border: none;
   border-radius: 4px;
   cursor: pointer;
 }
 
 .create-page-form button:hover {
-  background-color: #0069d9;
+  background-color: #0056b3;
+}
+
+.section {
+  margin-bottom: 15px;
 }
 
 .success {
   color: green;
   font-weight: bold;
-  margin-top: 10px;
 }
 
 .error {
   color: red;
   font-weight: bold;
-  margin-top: 10px;
-}
-
-.section {
-  margin-bottom: 10px;
-  padding: 10px;
-  background-color: #f0f0f0;
-  border-radius: 4px;
-  border: 1px solid #ddd;
 }
 </style>
