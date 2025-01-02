@@ -21,7 +21,7 @@
       :editMode="editMode"
       @change="onInputChange"
     />
-    <!-- <MenuSections v-if="!editMode" :sections="menuSections" /> -->
+
     <!-- Read-only sections otherwise -->
     <MenuSections v-else :sections="menuSections" />
   </div>
@@ -31,6 +31,7 @@
     <!-- ManageCategories modifies localCategories -->
     <ManageCategories
       :initialCategories="localCategories"
+      :allCategoriesFlat="allCategoriesFlat"
       :slug="slug"
       @categoriesChanged="onCategoriesChanged"
     />
@@ -54,7 +55,6 @@
 <script>
 import { computed, ref, onMounted } from "vue";
 import { useRestaurantStore } from "@/stores/restaurantStore";
-
 import EditableSections from "@/components/restaurant/menu/EditableSections.vue";
 import MenuSections from "@/components/restaurant/menu/MenuSections.vue";
 import MenuCategories from "@/components/restaurant/menu/MenuCategories.vue";
@@ -96,7 +96,7 @@ export default {
     const localCategories = ref([]);
     const localItems = ref([]);
 
-    // Initialize local arrays ONCE in onMounted (or whenever the slug changes)
+    // Initialize local arrays ONCE in onMounted
     onMounted(() => {
       // Clone store sections
       editableSections.value = JSON.parse(JSON.stringify(menuSections.value));
@@ -110,7 +110,7 @@ export default {
       localItems.value = JSON.parse(JSON.stringify(menuData.value.items || []));
     });
 
-    // Flatten categories for the item dropdown
+    // Flatten categories for both ManageCategories (parent dropdown) and ManageItems
     const allCategoriesFlat = computed(() => {
       const result = [];
       function traverse(cats) {
@@ -123,7 +123,7 @@ export default {
       return result;
     });
 
-    // Build categoryId -> array of items map
+    // Build categoryId -> array of items map for read-only display
     const categorizedItems = computed(() => {
       const mapping = {};
       function mapCat(cat) {
@@ -136,23 +136,21 @@ export default {
       return mapping;
     });
 
-    // Toggles edit mode
     function toggleEditMode() {
       editMode.value = !editMode.value;
     }
 
-    // Mark changes
     function onInputChange() {
       changesMade.value = true;
     }
 
-    // Save both sections + categories + items in one go
+    // Save both sections + categories + items
     async function saveAllChanges() {
       try {
         // 1) update sections
         await store.updateSections(slug.value, "menu", editableSections.value);
 
-        // 2) update categories + items
+        // 2) update categories + items in one call
         await store.updateMenuData(
           slug.value,
           localCategories.value,
