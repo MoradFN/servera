@@ -1,58 +1,65 @@
 <template>
-  <!-- 1) Top half: Edit "sections" if user is owner -->
+  <!-- Top: Manage Sections if isOwner -->
   <div>
     <div v-if="isOwner" class="owner-controls">
       <button @click="toggleEditMode">
         {{ editMode ? "Disable Edit Mode" : "Enable Edit Mode" }}
       </button>
+
       <transition v-if="editMode" name="slide-fade">
         <div v-if="changesMade" class="save-changes-bar">
-          <button @click="saveSections">Save Changes</button>
+          <!-- Single "Save All" button for both categories & items -->
+          <button @click="saveAllChanges">Save All Changes</button>
         </div>
       </transition>
     </div>
 
-    <!-- Show EditableSections if editMode is ON -->
+    <!-- EditableSections if editMode -->
     <EditableSections
-      v-if="isOwner && editMode"
+      v-if="editMode"
       v-model="editableSections"
       :editMode="editMode"
       @change="onInputChange"
     />
-
-    <!-- Show read-only sections if editMode is OFF -->
-    <MenuSections v-if="!editMode" :sections="menuSections" />
+    <!-- <MenuSections v-if="!editMode" :sections="menuSections" /> -->
+    <!-- Read-only sections otherwise -->
+    <MenuSections v-else :sections="menuSections" />
   </div>
 
-  <!-- 2) Middle: Manage categories/items if owner + edit mode -->
+  <!-- Middle: Manage categories & items if editMode -->
   <div v-if="isOwner && editMode">
+    <!-- ManageCategories modifies localCategories -->
     <ManageCategories
-      :initialCategories="menuCategories"
-      :initialItems="menuItems"
+      :initialCategories="localCategories"
       :slug="slug"
-      @categoriesUpdated="onCategoriesUpdated"
-      @itemsUpdated="onItemsUpdated"
+      @categoriesChanged="onCategoriesChanged"
+    />
+
+    <!-- ManageItems modifies localItems -->
+    <ManageItems
+      :initialItems="localItems"
+      :allCategories="allCategoriesFlat"
+      :slug="slug"
+      @itemsChanged="onItemsChanged"
     />
   </div>
 
-  <!-- 3) Bottom: Always show read-only categories/items -->
-  <div>
-    <MenuCategories
-      :categories="menuCategories"
-      :categorizedItems="categorizedItems"
-    />
-  </div>
+  <!-- Bottom: always show read-only category->items tree -->
+  <MenuCategories
+    :categories="localCategories"
+    :categorizedItems="categorizedItems"
+  />
 </template>
 
 <script>
-import { computed, ref, watchEffect } from "vue";
+import { computed, ref, onMounted } from "vue";
 import { useRestaurantStore } from "@/stores/restaurantStore";
 
-// Components
 import EditableSections from "@/components/restaurant/menu/EditableSections.vue";
 import MenuSections from "@/components/restaurant/menu/MenuSections.vue";
 import MenuCategories from "@/components/restaurant/menu/MenuCategories.vue";
 import ManageCategories from "@/components/restaurant/menu/ManageCategories.vue";
+import ManageItems from "@/components/restaurant/menu/ManageItems.vue";
 
 export default {
   name: "Menu",
@@ -61,6 +68,7 @@ export default {
     MenuSections,
     MenuCategories,
     ManageCategories,
+    ManageItems,
   },
   props: {
     isOwner: { type: Boolean, required: true },
@@ -70,98 +78,124 @@ export default {
   setup(props) {
     const store = useRestaurantStore();
 
-    // For editing "sections"
+    // Edit mode flags
     const editMode = ref(false);
     const changesMade = ref(false);
+
+    // For sections editing
     const editableSections = ref([]);
 
-    // Grab data from the store
+    // Slug from the store
     const slug = computed(() => store.currentSlug);
-    // "menu" object from the store
+
+    // Menu data from the store
     const menuData = computed(() => store.restaurantData?.menu || {});
-
-    // Extract arrays from the menu object
     const menuSections = computed(() => menuData.value.sections || []);
-    const menuCategories = computed(() => menuData.value.categories || []);
-    const menuItems = computed(() => menuData.value.items || []);
 
-    // Keep a local copy of sections for drag-and-drop
-    watchEffect(() => {
-      // Clone them so we don't mutate store data directly
+    // Local copies for categories & items
+    const localCategories = ref([]);
+    const localItems = ref([]);
+
+    // Initialize local arrays ONCE in onMounted (or whenever the slug changes)
+    onMounted(() => {
+      // Clone store sections
       editableSections.value = JSON.parse(JSON.stringify(menuSections.value));
+
+      // Clone categories
+      localCategories.value = JSON.parse(
+        JSON.stringify(menuData.value.categories || [])
+      );
+
+      // Clone items
+      localItems.value = JSON.parse(JSON.stringify(menuData.value.items || []));
     });
 
-    // Build categoryId -> items array mapping
+    // Flatten categories for the item dropdown
+    const allCategoriesFlat = computed(() => {
+      const result = [];
+      function traverse(cats) {
+        cats.forEach((cat) => {
+          result.push(cat);
+          if (cat.children?.length) traverse(cat.children);
+        });
+      }
+      traverse(localCategories.value);
+      return result;
+    });
+
+    // Build categoryId -> array of items map
     const categorizedItems = computed(() => {
       const mapping = {};
-
-      function mapItems(cat) {
-        mapping[cat.id] = menuItems.value.filter(
+      function mapCat(cat) {
+        mapping[cat.id] = localItems.value.filter(
           (item) => item.category_id === cat.id
         );
-        if (cat.children) {
-          cat.children.forEach((child) => mapItems(child));
-        }
+        if (cat.children) cat.children.forEach(mapCat);
       }
-
-      menuCategories.value.forEach((cat) => mapItems(cat));
+      localCategories.value.forEach(mapCat);
       return mapping;
     });
 
-    // Methods
+    // Toggles edit mode
     function toggleEditMode() {
       editMode.value = !editMode.value;
     }
 
+    // Mark changes
     function onInputChange() {
       changesMade.value = true;
     }
 
-    async function saveSections() {
+    // Save both sections + categories + items in one go
+    async function saveAllChanges() {
       try {
-        // Save the sections array to the store
+        // 1) update sections
         await store.updateSections(slug.value, "menu", editableSections.value);
+
+        // 2) update categories + items
+        await store.updateMenuData(
+          slug.value,
+          localCategories.value,
+          localItems.value
+        );
+
         changesMade.value = false;
         editMode.value = false;
-        alert("Sections updated successfully!");
-      } catch (error) {
-        console.error("Failed to save sections:", error.message);
+        alert("All changes saved successfully!");
+      } catch (err) {
+        console.error("Failed to save all changes:", err.message);
       }
     }
 
-    // Called when ManageCategories emits "categoriesUpdated"
-    function onCategoriesUpdated(updatedCategories) {
-      // Update store's categories
-      store.restaurantData.menu.categories = updatedCategories;
-      console.log("Updated Categories in parent:", updatedCategories);
+    // Called when ManageCategories emits categoriesChanged
+    function onCategoriesChanged(updatedCategories) {
+      localCategories.value = updatedCategories;
+      changesMade.value = true;
     }
 
-    // Called when ManageCategories emits "itemsUpdated"
-    function onItemsUpdated(updatedItems) {
-      // Update store's items
-      store.restaurantData.menu.items = updatedItems;
-      console.log("Updated Items in parent:", updatedItems);
+    // Called when ManageItems emits itemsChanged
+    function onItemsChanged(updatedItems) {
+      localItems.value = updatedItems;
+      changesMade.value = true;
     }
 
     return {
-      // Refs & state
       editMode,
       changesMade,
       editableSections,
-
-      // Computeds
-      slug,
       menuSections,
-      menuCategories,
-      menuItems, // NB: We must return this so we can pass it to ManageCategories
-      categorizedItems,
 
-      // Methods
+      localCategories,
+      localItems,
+      allCategoriesFlat,
+      categorizedItems,
+      slug,
+
       toggleEditMode,
       onInputChange,
-      saveSections,
-      onCategoriesUpdated,
-      onItemsUpdated,
+      saveAllChanges,
+      onCategoriesChanged,
+      onItemsChanged,
     };
   },
 };
