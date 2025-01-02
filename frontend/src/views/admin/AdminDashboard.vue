@@ -51,14 +51,26 @@
                 placeholder="Order"
                 required
               />
-              <button type="button" @click="removeSection(page.name, index)">
+              <button
+                type="button"
+                class="remove-button"
+                @click="removeSection(page.name, index)"
+              >
                 Remove Section
               </button>
             </div>
-            <button type="button" @click="addSection(page.name)">
-              Add Section
-            </button>
-            <button type="submit">Create {{ page.label }} Page</button>
+            <div class="btn_form_gr_blue">
+              <button
+                type="button"
+                class="add-button"
+                @click="addSection(page.name)"
+              >
+                Add Section
+              </button>
+              <button type="submit" class="create-button">
+                Create {{ page.label }} Page
+              </button>
+            </div>
           </form>
           <p
             v-if="page.message"
@@ -180,13 +192,13 @@ export default {
 <style scoped>
 .forms-container {
   display: flex;
-  gap: 20px; /* Add spacing between forms */
-  flex-wrap: wrap; /* Allow forms to wrap on smaller screens */
+  gap: 20px;
+  flex-wrap: wrap;
 }
 
 .page-form-container {
-  flex: 1; /* Make forms take equal space */
-  min-width: 300px; /* Set a minimum width for each form */
+  flex: 1;
+  min-width: 300px;
 }
 
 .create-page-form {
@@ -197,7 +209,7 @@ export default {
   margin-top: 10px;
   display: flex;
   flex-direction: column;
-  align-items: center; /* Center-aligns the form content */
+  align-items: center;
 }
 
 .create-page-form h2 {
@@ -222,17 +234,58 @@ export default {
   border-radius: 4px;
 }
 
-.create-page-form button {
-  padding: 10px 20px;
-  color: white;
-  background-color: #007bff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+.btn_form_gr_blue {
+  display: flex;
+  gap: 3vw;
 }
 
-.create-page-form button:hover {
+.btn_form_gr_blue button {
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  color: #fff;
+  font-weight: bold;
+}
+
+.add-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+.add-button:hover {
   background-color: #0056b3;
+}
+
+.remove-button {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+.remove-button:hover {
+  background-color: #c82333;
+}
+
+.create-button {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+.create-button:hover {
+  background-color: #218838;
 }
 
 .section {
