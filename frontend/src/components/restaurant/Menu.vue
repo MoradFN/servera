@@ -1,37 +1,30 @@
 <template>
-  <!-- This top area handles sections editing (like before) -->
+  <!-- 1) Top half: Edit "sections" if user is owner -->
   <div>
-    <!-- Editable Sections -->
-    <div v-if="isOwner">
-      <div class="owner-controls">
-        <button @click="toggleEditMode">
-          {{ editMode ? "Disable Edit Mode" : "Enable Edit Mode" }}
-        </button>
-        <transition v-if="editMode" name="slide-fade">
-          <div v-if="changesMade" class="save-changes-bar">
-            <button @click="saveSections">Save Changes</button>
-          </div>
-        </transition>
-      </div>
-
-      <!-- Render EditableSections only in edit mode -->
-      <EditableSections
-        v-if="editMode"
-        v-model="editableSections"
-        :editMode="editMode"
-        @change="onInputChange"
-      />
+    <div v-if="isOwner" class="owner-controls">
+      <button @click="toggleEditMode">
+        {{ editMode ? "Disable Edit Mode" : "Enable Edit Mode" }}
+      </button>
+      <transition v-if="editMode" name="slide-fade">
+        <div v-if="changesMade" class="save-changes-bar">
+          <button @click="saveSections">Save Changes</button>
+        </div>
+      </transition>
     </div>
 
-    <!-- Render MenuSections only in view mode -->
+    <!-- Show EditableSections if editMode is ON -->
+    <EditableSections
+      v-if="isOwner && editMode"
+      v-model="editableSections"
+      :editMode="editMode"
+      @change="onInputChange"
+    />
+
+    <!-- Show read-only sections if editMode is OFF -->
     <MenuSections v-if="!editMode" :sections="menuSections" />
   </div>
 
-  <!-- 
-    ManageCategories for categories+items.
-    We pass initialCategories and initialItems from the store,
-    so the child doesn't get "undefined".
-  -->
+  <!-- 2) Middle: Manage categories/items if owner + edit mode -->
   <div v-if="isOwner && editMode">
     <ManageCategories
       :initialCategories="menuCategories"
@@ -42,7 +35,7 @@
     />
   </div>
 
-  <!-- Always display the read-only category tree -->
+  <!-- 3) Bottom: Always show read-only categories/items -->
   <div>
     <MenuCategories
       :categories="menuCategories"
@@ -54,6 +47,8 @@
 <script>
 import { computed, ref, watchEffect } from "vue";
 import { useRestaurantStore } from "@/stores/restaurantStore";
+
+// Components
 import EditableSections from "@/components/restaurant/menu/EditableSections.vue";
 import MenuSections from "@/components/restaurant/menu/MenuSections.vue";
 import MenuCategories from "@/components/restaurant/menu/MenuCategories.vue";
@@ -68,60 +63,48 @@ export default {
     ManageCategories,
   },
   props: {
-    isOwner: {
-      type: Boolean,
-      required: true,
-    },
-    restaurantData: {
-      type: Object,
-      required: true,
-    },
-    pageStatus: {
-      type: Object,
-      required: true,
-    },
+    isOwner: { type: Boolean, required: true },
+    restaurantData: { type: Object, required: true },
+    pageStatus: { type: Object, required: true },
   },
   setup(props) {
     const store = useRestaurantStore();
 
-    // Local state for editing "sections"
+    // For editing "sections"
     const editMode = ref(false);
     const changesMade = ref(false);
     const editableSections = ref([]);
 
-    // Pull data from the store
+    // Grab data from the store
     const slug = computed(() => store.currentSlug);
-
-    // The "menu" object from the store
+    // "menu" object from the store
     const menuData = computed(() => store.restaurantData?.menu || {});
-    // Grab arrays from that
+
+    // Extract arrays from the menu object
     const menuSections = computed(() => menuData.value.sections || []);
     const menuCategories = computed(() => menuData.value.categories || []);
     const menuItems = computed(() => menuData.value.items || []);
 
-    // Keep a local copy of "sections" for drag-and-drop
+    // Keep a local copy of sections for drag-and-drop
     watchEffect(() => {
+      // Clone them so we don't mutate store data directly
       editableSections.value = JSON.parse(JSON.stringify(menuSections.value));
     });
 
-    // Build a map: categoryId -> array of items
+    // Build categoryId -> items array mapping
     const categorizedItems = computed(() => {
       const mapping = {};
 
-      const mapItemsToCategory = (cat) => {
-        // items for this category
+      function mapItems(cat) {
         mapping[cat.id] = menuItems.value.filter(
           (item) => item.category_id === cat.id
         );
-        // map children recursively
         if (cat.children) {
-          cat.children.forEach((child) => mapItemsToCategory(child));
+          cat.children.forEach((child) => mapItems(child));
         }
-      };
+      }
 
-      menuCategories.value.forEach((cat) => {
-        mapItemsToCategory(cat);
-      });
+      menuCategories.value.forEach((cat) => mapItems(cat));
       return mapping;
     });
 
@@ -136,6 +119,7 @@ export default {
 
     async function saveSections() {
       try {
+        // Save the sections array to the store
         await store.updateSections(slug.value, "menu", editableSections.value);
         changesMade.value = false;
         editMode.value = false;
@@ -145,34 +129,37 @@ export default {
       }
     }
 
+    // Called when ManageCategories emits "categoriesUpdated"
     function onCategoriesUpdated(updatedCategories) {
-      // The child ManageCategories emits updated categories
+      // Update store's categories
       store.restaurantData.menu.categories = updatedCategories;
       console.log("Updated Categories in parent:", updatedCategories);
     }
 
+    // Called when ManageCategories emits "itemsUpdated"
     function onItemsUpdated(updatedItems) {
-      // If you want to track updated items
+      // Update store's items
       store.restaurantData.menu.items = updatedItems;
       console.log("Updated Items in parent:", updatedItems);
     }
 
     return {
+      // Refs & state
       editMode,
       changesMade,
       editableSections,
-      toggleEditMode,
-      onInputChange,
-      saveSections,
 
-      // For the rest of the template
+      // Computeds
       slug,
       menuSections,
       menuCategories,
-      menuItems, // <-- Now we return it so the template sees it
+      menuItems, // NB: We must return this so we can pass it to ManageCategories
       categorizedItems,
 
-      // Events
+      // Methods
+      toggleEditMode,
+      onInputChange,
+      saveSections,
       onCategoriesUpdated,
       onItemsUpdated,
     };
