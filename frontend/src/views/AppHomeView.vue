@@ -7,9 +7,9 @@ import RestaurantListings from "@/components/RestaurantListings.vue";
 
 <template>
   <main>
+    <!-- title="Home Prop Test title"
+    subtitle="Home Prop Test subtitle" -->
     <AppHero
-      title="Home Prop Test title"
-      subtitle="Home Prop Test subtitle"
       :links="[
         { text: 'Kom igång', to: '/get-started' },
         { text: 'Läs mer', to: '/about' },
