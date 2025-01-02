@@ -92,20 +92,24 @@ export default {
 <style scoped>
 /* Parent Categories Container (level===0) */
 .parent-categories {
+  text-align: center;
+  border-radius: 20px;
   /* Occupies the full width by default, often in a parent container */
   width: 100%;
   padding: 1rem 0;
   margin-bottom: 2rem;
+  background-color: #4066b3; /* Dark blue background */
 }
 
 .parent-category {
   /* Each top-level category is full-width block */
   margin-bottom: 2rem;
-  border-bottom: 1px solid #ccc;
+  /* border-bottom: 1px solid #ccc; */
   padding-bottom: 1rem;
 }
 
 .parent-category h2 {
+  font-size: 2rem;
   margin-bottom: 0.5rem;
 }
 
@@ -120,20 +124,22 @@ export default {
 }
 
 .child-category {
-  border: 1px solid #ddd;
+  /* border: 1px solid #ddd; */
   padding: 1rem;
   border-radius: 4px;
-  background-color: #fafafa;
+  /* background-color: #fafafa; */
+  border-right: 1px solid #000000;
 }
 
 .child-category h3 {
+  font-size: 1.5rem;
   margin-bottom: 0.5rem;
 }
 
 /* Items styling */
 .items {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(200px, 1fr));
   gap: 0.5rem;
 }
 </style>
